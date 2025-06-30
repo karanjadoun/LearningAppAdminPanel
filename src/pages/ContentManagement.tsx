@@ -1,577 +1,680 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Container,
   Typography,
+  Tabs,
+  Tab,
+  Card,
+  CardContent,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Paper,
-  Grid,
-  Snackbar,
-  Alert,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
   Chip,
-  IconButton,
-  Card,
-  CardContent,
-  Divider,
+  Alert,
+  Snackbar,
+  CircularProgress,
+  Menu,
+  MenuItem as MenuItemComponent,
 } from '@mui/material';
 import {
-  Add,
-  Edit,
-  FolderOpen,
-  Article,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  MoreVert as MoreVertIcon,
+  Folder as CategoryIcon,
   Topic as TopicIcon,
+  Article as ContentIcon,
 } from '@mui/icons-material';
-import { useQueryClient, useQuery } from '@tanstack/react-query';
-import ContentTree from '../components/Content/ContentTree';
-import ContentEditor from '../components/Content/ContentEditor';
-import { ContentNode, FirestoreContentNode } from '../types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/contentService';
 import { auth } from '../config/firebase';
+import { ContentNode, FirestoreContentNode } from '../types';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`content-tabpanel-${index}`}
+      aria-labelledby={`content-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 const ContentManagement: React.FC = () => {
-  const [selectedNodeId, setSelectedNodeId] = useState<string>('');
-  const [editorOpen, setEditorOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [currentNode, setCurrentNode] = useState<ContentNode | null>(null);
-  const [editorMode, setEditorMode] = useState<'create' | 'edit'>('create');
-  const [nodeType, setNodeType] = useState<'category' | 'topic' | 'content'>('category');
-  const [parentNode, setParentNode] = useState<ContentNode | null>(null);
+  const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
+  const [selectedItem, setSelectedItem] = useState<ContentNode | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  
+  // Form states
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    colorHex: '#6366f1',
+    icon: '',
+    categoryId: '',
+    topicId: '',
+  });
+
+  // Snackbar state
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
     severity: 'success' | 'error';
-  }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  }>({ open: false, message: '', severity: 'success' });
 
   const queryClient = useQueryClient();
 
+  // Load data
+  const { data: contentTree, isLoading } = useQuery({
+    queryKey: ['contentTree'],
+    queryFn: () => contentService.getContentTree(),
+  });
+
+  // Helper functions
   const showSnackbar = (message: string, severity: 'success' | 'error') => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
-
   const refreshData = () => {
     queryClient.invalidateQueries({ queryKey: ['contentTree'] });
-    queryClient.invalidateQueries({ queryKey: ['contentStats'] });
   };
 
-  // Handle creating a new category
-  const handleAddCategory = () => {
-    setCurrentNode(null);
-    setParentNode(null);
-    setEditorMode('create');
-    setNodeType('category');
-    setEditorOpen(true);
+  // Extract categories, topics, and content from tree
+  const categories = contentTree || [];
+  const topics = categories.flatMap(cat => 
+    (cat.children || []).map(topic => ({ ...topic, categoryId: cat.id, categoryTitle: cat.title }))
+  );
+  const content = topics.flatMap(topic => 
+    (topic.children || []).map(content => ({ 
+      ...content, 
+      categoryId: (topic as any).categoryId, 
+      categoryTitle: (topic as any).categoryTitle,
+      topicId: topic.id,
+      topicTitle: topic.title 
+    }))
+  );
+
+  // Handle tab change
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
   };
 
-  // Handle editing a node
-  const handleEdit = (node: ContentNode) => {
-    setCurrentNode(node);
-    setParentNode(null);
-    setEditorMode('edit');
-    
-    if (node.isRoot) {
-      setNodeType('category');
-    } else if (node.content) {
-      setNodeType('content');
-    } else {
-      setNodeType('topic');
-    }
-    
-    setEditorOpen(true);
+  // Handle create new item
+  const handleCreate = (type: 'category' | 'topic' | 'content') => {
+    setEditMode('create');
+    setSelectedItem(null);
+    setFormData({
+      title: '',
+      content: '',
+      colorHex: '#6366f1',
+      icon: '',
+      categoryId: '',
+      topicId: '',
+    });
+    setDialogOpen(true);
   };
 
-  // Handle adding a child to a node
-  const handleAddChild = (parent: ContentNode) => {
-    console.log('➕ Adding child to parent:', parent);
-    
-    setCurrentNode(null);
-    setParentNode(parent);
-    setEditorMode('create');
-    
-    // Determine what type of child to create
-    if (parent.isRoot) {
-      setNodeType('topic');
-      console.log('📂 Creating topic under root category');
-    } else {
-      setNodeType('content');
-      console.log('📄 Creating content under topic');
-    }
-    
-    setEditorOpen(true);
+  // Handle edit item
+  const handleEdit = (item: ContentNode) => {
+    setEditMode('edit');
+    setSelectedItem(item);
+    setFormData({
+      title: item.title,
+      content: item.content || '',
+      colorHex: item.colorHex || '#6366f1',
+      icon: item.icon || '',
+      categoryId: (item as any).categoryId || '',
+      topicId: (item as any).topicId || '',
+    });
+    setDialogOpen(true);
   };
 
-  // Handle delete confirmation
-  // Handle delete confirmation
-  const handleDelete = (node: ContentNode) => {
-    setCurrentNode(node);
-    setDeleteDialogOpen(true);
-  };
-
-  // Confirm delete operation
-  const confirmDelete = async () => {
-    if (!currentNode) return;
-
+  // Handle save
+  const handleSave = async () => {
     try {
-      console.log('🗑️ Starting delete for:', currentNode.title);
-      console.log('🔐 Current user:', auth.currentUser?.email);
-      console.log('🔐 User UID:', auth.currentUser?.uid);
-      console.log('📍 Node path:', currentNode.fullPath);
-      
-      if (!auth.currentUser) {
-        throw new Error('User not authenticated');
+      if (!formData.title.trim()) {
+        showSnackbar('Title is required', 'error');
+        return;
       }
-      
-      // Pass the full path for nested nodes, empty array for root categories
-      const pathToUse = currentNode.fullPath && currentNode.fullPath.length > 0 
-        ? currentNode.fullPath 
-        : [];
-      
-      await contentService.deleteNode(currentNode.id, pathToUse);
-      showSnackbar(`${currentNode.content ? 'Content' : currentNode.isRoot ? 'Category' : 'Topic'} deleted successfully`, 'success');
-      refreshData();
-      setDeleteDialogOpen(false);
-      setCurrentNode(null);
-      
-      // Clear selection if the deleted node was selected
-      if (selectedNodeId === currentNode.id) {
-        setSelectedNodeId('');
-      }
-    } catch (error) {
-      console.error('❌ Delete error:', error);
-      showSnackbar('Error deleting item: ' + (error as Error).message, 'error');
-    }
-  };
 
-  // Handle save from editor
-  const handleSave = async (data: Partial<FirestoreContentNode>) => {
-    try {
-      console.log('🎯 Save triggered:', { 
-        editorMode, 
-        nodeType, 
-        parentNode: parentNode?.id, 
-        parentFullPath: parentNode?.fullPath,
-        currentNode: currentNode?.id,
-        data 
-      });
-      
-      if (editorMode === 'create') {
-        if (parentNode) {
-          // Creating a child - use parent's full path to determine where to save
-          console.log('👶 Creating child under parent:', parentNode.id, 'at path:', parentNode.fullPath);
-          
-          // Calculate the parent path for the new child
-          // If parentNode has a fullPath, we need to add 'children' to get to the children collection
-          const parentPath = parentNode.fullPath ? [...parentNode.fullPath, 'children'] : [];
-          console.log('📁 Calculated parent path for new child:', parentPath);
-          
-          await contentService.createChild(parentNode.id, data as Omit<FirestoreContentNode, 'order'>, parentPath);
-          showSnackbar('Item created successfully', 'success');
-        } else {
-          // Creating a root category
-          console.log('🌳 Creating root category');
-          await contentService.createRootCategory(data as Omit<FirestoreContentNode, 'order'>);
+      if (editMode === 'create') {
+        const data = {
+          title: formData.title,
+          content: formData.content,
+          colorHex: formData.colorHex,
+          icon: formData.icon,
+        };
+
+        if (activeTab === 0) {
+          // Creating category
+          await contentService.createRootCategory(data);
           showSnackbar('Category created successfully', 'success');
+        } else if (activeTab === 1) {
+          // Creating topic
+          if (!formData.categoryId) {
+            showSnackbar('Please select a category', 'error');
+            return;
+          }
+          const category = categories.find(c => c.id === formData.categoryId);
+          if (category) {
+            await contentService.createChild(category.id, data, [...(category.fullPath || []), 'children']);
+            showSnackbar('Topic created successfully', 'success');
+          }
+        } else if (activeTab === 2) {
+          // Creating content
+          if (!formData.categoryId || !formData.topicId) {
+            showSnackbar('Please select both category and topic', 'error');
+            return;
+          }
+          const topic = topics.find(t => t.id === formData.topicId);
+          if (topic) {
+            await contentService.createChild(topic.id, data, [...(topic.fullPath || []), 'children']);
+            showSnackbar('Content created successfully', 'success');
+          }
         }
       } else {
-        // Editing existing node
-        if (currentNode) {
-          console.log('✏️ Editing existing node:', currentNode.id, 'with path:', currentNode.fullPath);
-          await contentService.updateNode(currentNode.id, data, currentNode.fullPath);
+        // Editing existing item
+        if (selectedItem) {
+          const data = {
+            title: formData.title,
+            content: formData.content,
+            colorHex: formData.colorHex,
+            icon: formData.icon,
+          };
+          await contentService.updateNode(selectedItem.id, data, selectedItem.fullPath);
           showSnackbar('Item updated successfully', 'success');
         }
       }
-      
+
+      setDialogOpen(false);
       refreshData();
-      setEditorOpen(false);
     } catch (error) {
-      console.error('❌ Error saving content:', error);
-      showSnackbar('Error saving item. Please try again.', 'error');
-      throw error; // Re-throw to let the editor handle it
+      console.error('Error saving:', error);
+      showSnackbar('Error saving item', 'error');
     }
   };
 
+  // Handle delete
+  const handleDelete = async () => {
+    if (!selectedItem) return;
+
+    try {
+      await contentService.deleteNode(selectedItem.id, selectedItem.fullPath);
+      showSnackbar('Item deleted successfully', 'success');
+      setDeleteDialogOpen(false);
+      setSelectedItem(null);
+      refreshData();
+    } catch (error) {
+      console.error('Error deleting:', error);
+      showSnackbar('Error deleting item', 'error');
+    }
+  };
+
+  // Handle menu actions
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, item: ContentNode) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedItem(item);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const getDialogTitle = () => {
+    const types = ['Category', 'Topic', 'Content'];
+    const action = editMode === 'create' ? 'Create' : 'Edit';
+    return `${action} ${types[activeTab]}`;
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ 
-      height: 'calc(100vh - 72px)', 
-      display: 'flex', 
-      flexDirection: 'column',
-      backgroundColor: 'background.default',
-    }}>
+    <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box sx={{ 
-        p: 4, 
-        borderBottom: '1px solid', 
-        borderColor: 'grey.200',
-        backgroundColor: 'background.paper',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
-              Content Management
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
-              Create and organize your learning content with our intuitive editor
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={handleAddCategory}
-            sx={{ 
-              borderRadius: 3,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              py: 1.5,
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                transform: 'translateY(-1px)',
-                boxShadow: '0 6px 16px rgba(99, 102, 241, 0.4)',
-              },
-              transition: 'all 0.2s ease-in-out',
-            }}
-          >
-            New Category
-          </Button>
-        </Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+          Content Management
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Manage your learning content in a simple, organized way
+        </Typography>
       </Box>
 
-      {/* Main Content */}
-      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden', gap: 3, p: 3 }}>
-        {/* Sidebar - Content Tree */}
-        <Box sx={{ 
-          width: 480, 
-          borderRadius: 3,
-          border: '1px solid', 
-          borderColor: 'grey.200',
-          backgroundColor: 'background.paper',
-          display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-          overflow: 'hidden',
-        }}>
-          <Box sx={{ 
-            p: 3, 
-            borderBottom: '1px solid', 
-            borderColor: 'grey.200',
-            backgroundColor: 'grey.50',
-          }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              📚 Content Structure
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Organize your learning materials
-            </Typography>
-          </Box>
-          <Box sx={{ flex: 1, overflow: 'auto' }}>
-            <ContentTree
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onAddChild={handleAddChild}
-              onAddCategory={handleAddCategory}
-              selectedNodeId={selectedNodeId}
-              onNodeSelect={setSelectedNodeId}
+      {/* Tabs */}
+      <Card>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab 
+              icon={<CategoryIcon />} 
+              label={`Categories (${categories.length})`} 
+              iconPosition="start"
             />
+            <Tab 
+              icon={<TopicIcon />} 
+              label={`Topics (${topics.length})`} 
+              iconPosition="start"
+            />
+            <Tab 
+              icon={<ContentIcon />} 
+              label={`Content (${content.length})`} 
+              iconPosition="start"
+            />
+          </Tabs>
+        </Box>
+
+        {/* Categories Tab */}
+        <TabPanel value={activeTab} index={0}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">Categories</Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleCreate('category')}
+            >
+              Add Category
+            </Button>
           </Box>
-        </Box>
 
-        {/* Main Content Area */}
-        <Box sx={{ 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          overflow: 'hidden',
-          borderRadius: 3,
-          border: '1px solid', 
-          borderColor: 'grey.200',
-          backgroundColor: 'background.paper',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-        }}>
-          <ContentPreviewArea 
-            selectedNodeId={selectedNodeId} 
-            onEdit={handleEdit} 
-            onNodeSelect={setSelectedNodeId}
-          />
-        </Box>
-      </Box>
+          <TableContainer component={Paper} variant="outlined">
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Topics</TableCell>
+                  <TableCell>Color</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {categories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <CategoryIcon sx={{ color: category.colorHex }} />
+                        <Typography>{category.title}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={`${category.children?.length || 0} topics`} 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            backgroundColor: category.colorHex,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                          }}
+                        />
+                        <Typography variant="body2">{category.colorHex}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton onClick={(e) => handleMenuClick(e, category)}>
+                        <MoreVertIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {categories.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      <Typography color="text.secondary">No categories yet. Create your first category!</Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </TabPanel>
 
-      {/* Content Editor Dialog */}
-      <ContentEditor
-        open={editorOpen}
-        onClose={() => setEditorOpen(false)}
-        onSave={handleSave}
-        node={currentNode || undefined}
-        mode={editorMode}
-        nodeType={nodeType}
-      />
+        {/* Topics Tab */}
+        <TabPanel value={activeTab} index={1}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">Topics</Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleCreate('topic')}
+              disabled={categories.length === 0}
+            >
+              Add Topic
+            </Button>
+          </Box>
+
+          {categories.length === 0 ? (
+            <Alert severity="info">
+              Create categories first before adding topics.
+            </Alert>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Content Items</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {topics.map((topic) => (
+                    <TableRow key={topic.id}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <TopicIcon sx={{ color: topic.colorHex || 'primary.main' }} />
+                          <Typography>{topic.title}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={(topic as any).categoryTitle} 
+                          size="small" 
+                          color="primary" 
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={`${topic.children?.length || 0} items`} 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton onClick={(e) => handleMenuClick(e, topic)}>
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {topics.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        <Typography color="text.secondary">No topics yet. Create your first topic!</Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+
+        {/* Content Tab */}
+        <TabPanel value={activeTab} index={2}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography variant="h6">Content</Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleCreate('content')}
+              disabled={topics.length === 0}
+            >
+              Add Content
+            </Button>
+          </Box>
+
+          {topics.length === 0 ? (
+            <Alert severity="info">
+              Create categories and topics first before adding content.
+            </Alert>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Category</TableCell>
+                    <TableCell>Topic</TableCell>
+                    <TableCell>Has Content</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {content.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <ContentIcon sx={{ color: 'warning.main' }} />
+                          <Typography>{item.title}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={(item as any).categoryTitle} 
+                          size="small" 
+                          color="primary" 
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={(item as any).topicTitle} 
+                          size="small" 
+                          color="secondary" 
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={item.content ? 'Yes' : 'No'} 
+                          size="small" 
+                          color={item.content ? 'success' : 'default'}
+                          variant={item.content ? 'filled' : 'outlined'}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton onClick={(e) => handleMenuClick(e, item)}>
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {content.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} align="center">
+                        <Typography color="text.secondary">No content yet. Create your first content item!</Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
+      </Card>
+
+      {/* Context Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItemComponent onClick={() => { handleEdit(selectedItem!); handleMenuClose(); }}>
+          <EditIcon sx={{ mr: 1 }} /> Edit
+        </MenuItemComponent>
+        <MenuItemComponent 
+          onClick={() => { setDeleteDialogOpen(true); handleMenuClose(); }}
+          sx={{ color: 'error.main' }}
+        >
+          <DeleteIcon sx={{ mr: 1 }} /> Delete
+        </MenuItemComponent>
+      </Menu>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>{getDialogTitle()}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              fullWidth
+              label="Title"
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              required
+            />
+
+            {activeTab === 1 && (
+              <FormControl fullWidth required>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                  label="Category"
+                >
+                  {categories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.title}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {activeTab === 2 && (
+              <>
+                <FormControl fullWidth required>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={formData.categoryId}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, categoryId: e.target.value, topicId: '' }));
+                    }}
+                    label="Category"
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category.id} value={category.id}>
+                        {category.title}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth required>
+                  <InputLabel>Topic</InputLabel>
+                  <Select
+                    value={formData.topicId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, topicId: e.target.value }))}
+                    label="Topic"
+                    disabled={!formData.categoryId}
+                  >
+                    {topics
+                      .filter(topic => (topic as any).categoryId === formData.categoryId)
+                      .map((topic) => (
+                        <MenuItem key={topic.id} value={topic.id}>
+                          {topic.title}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+              </>
+            )}
+
+            <TextField
+              fullWidth
+              label="Color"
+              type="color"
+              value={formData.colorHex}
+              onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+            />
+
+            {activeTab === 2 && (
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  Content
+                </Typography>
+                <ReactQuill
+                  value={formData.content}
+                  onChange={(value) => setFormData(prev => ({ ...prev, content: value }))}
+                  style={{ height: 200, marginBottom: 50 }}
+                />
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave}>
+            {editMode === 'create' ? 'Create' : 'Update'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete "{currentNode?.title}"? 
-            {!currentNode?.content && " This will also delete all child items."}
+            Are you sure you want to delete "{selectedItem?.title}"?
+            {selectedItem && !selectedItem.content && " This will also delete all child items."}
           </Typography>
         </DialogContent>
-                  <DialogActions>
-            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button onClick={confirmDelete} color="error" variant="contained">
-              Delete
-            </Button>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleDelete} color="error" variant="contained">
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
       >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity}>
+        <Alert 
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))} 
+          severity={snackbar.severity}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
-  );
-};
-
-// Content Preview Area Component
-const ContentPreviewArea: React.FC<{
-  selectedNodeId: string;
-  onEdit: (node: any) => void;
-  onNodeSelect: (nodeId: string) => void;
-}> = ({ selectedNodeId, onEdit, onNodeSelect }) => {
-  const { data: contentTree } = useQuery({
-    queryKey: ['contentTree'],
-    queryFn: () => contentService.getContentTree(),
-  });
-
-  // Find the selected node in the tree
-  const findNodeById = (nodes: ContentNode[], id: string): ContentNode | null => {
-    for (const node of nodes) {
-      if (node.id === id) {
-        console.log('🎯 Found selected node:', node);
-        return node;
-      }
-      if (node.children) {
-        const found = findNodeById(node.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  const selectedNode = contentTree ? findNodeById(contentTree, selectedNodeId) : null;
-  console.log('🔍 Selected node ID:', selectedNodeId, 'Found node:', selectedNode);
-
-  if (!selectedNode) {
-    return (
-      <Box sx={{ 
-        flex: 1, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: 'grey.50'
-      }}>
-        <Box sx={{ textAlign: 'center', maxWidth: 400 }}>
-          <FolderOpen sx={{ fontSize: 64, color: 'grey.400', mb: 2 }} />
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-            Select Content to Preview
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Choose an item from the content tree to view and edit its details
-          </Typography>
-          <Box sx={{ 
-            p: 3, 
-            backgroundColor: 'background.paper', 
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider'
-          }}>
-            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-              Content Types:
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <FolderOpen sx={{ fontSize: 20, color: 'primary.main' }} />
-                <Typography variant="body2">Categories - Main subjects</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <TopicIcon sx={{ fontSize: 20, color: 'success.main' }} />
-                <Typography variant="body2">Topics - Subtopics</Typography>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Article sx={{ fontSize: 20, color: 'warning.main' }} />
-                <Typography variant="body2">Content - Learning materials</Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    );
-  }
-
-  const getNodeIcon = (node: ContentNode) => {
-    if (node.content) return <Article sx={{ color: 'warning.main' }} />;
-    if (node.isRoot) return <FolderOpen sx={{ color: 'primary.main' }} />;
-    return <TopicIcon sx={{ color: 'success.main' }} />;
-  };
-
-  const getNodeType = (node: ContentNode) => {
-    if (node.content) return 'Content';
-    if (node.isRoot) return 'Category';
-    return 'Topic';
-  };
-
-  return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box sx={{ 
-        p: 3, 
-        borderBottom: '1px solid', 
-        borderColor: 'divider',
-        backgroundColor: 'background.paper'
-      }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              {getNodeIcon(selectedNode)}
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                {selectedNode.title}
-              </Typography>
-              <Chip 
-                label={getNodeType(selectedNode)} 
-                size="small" 
-                variant="outlined"
-                sx={{ ml: 1 }}
-              />
-            </Box>
-            {selectedNode.colorHex && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                <Box 
-                  sx={{ 
-                    width: 20, 
-                    height: 20, 
-                    borderRadius: '50%', 
-                    backgroundColor: selectedNode.colorHex,
-                    border: '1px solid',
-                    borderColor: 'divider'
-                  }} 
-                />
-                <Typography variant="body2" color="text.secondary">
-                  {selectedNode.colorHex}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-          <Button
-            variant="contained"
-            startIcon={<Edit />}
-            onClick={() => onEdit(selectedNode)}
-            sx={{ 
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600
-            }}
-          >
-            Edit
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Content */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-        {selectedNode.content ? (
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                📄 Content Preview
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Box 
-                sx={{ 
-                  maxHeight: 500, 
-                  overflow: 'auto',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  p: 3,
-                  backgroundColor: 'background.paper'
-                }}
-                dangerouslySetInnerHTML={{ __html: selectedNode.content }}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card sx={{ mb: 3 }}>
-            <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              {getNodeIcon(selectedNode)}
-              <Typography variant="h6" sx={{ mt: 1, mb: 1, fontWeight: 600 }}>
-                {getNodeType(selectedNode)} Overview
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {selectedNode.isRoot 
-                  ? 'This category contains topics and learning materials'
-                  : 'This topic can contain learning content and materials'
-                }
-              </Typography>
-              {selectedNode.children && selectedNode.children.length > 0 && (
-                <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                  💡 Expand "{selectedNode.title}" in the tree to see its {selectedNode.children.length} item(s)
-                </Typography>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Children Summary */}
-        {selectedNode.children && selectedNode.children.length > 0 && (
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                📂 Contains {selectedNode.children.length} item(s)
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Click on any item below to view its details:
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {selectedNode.children.map((child) => (
-                  <Chip
-                    key={child.id}
-                    label={child.title}
-                    variant={child.content ? "filled" : "outlined"}
-                    size="medium"
-                    icon={child.content ? <Article /> : <TopicIcon />}
-                    clickable
-                    onClick={() => onNodeSelect(child.id)}
-                    sx={{
-                      '&:hover': {
-                        backgroundColor: child.content ? 'warning.light' : 'success.light',
-                        color: 'white'
-                      }
-                    }}
-                  />
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
-        )}
-      </Box>
     </Box>
   );
 };
