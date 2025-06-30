@@ -12,6 +12,7 @@ import {
   Select,
   MenuItem,
   Typography,
+  Chip,
   IconButton,
 } from '@mui/material';
 import { Close, ColorLens } from '@mui/icons-material';
@@ -77,6 +78,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
     reset,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<FormData>({
     defaultValues: {
       title: '',
@@ -85,6 +87,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({
       colorHex: '#fe4a49',
     },
   });
+
+  const watchedColor = watch('colorHex');
 
   useEffect(() => {
     if (node && mode === 'edit') {

@@ -9,15 +9,18 @@ import {
   ListItemText,
   Typography,
   Avatar,
+  Divider,
   IconButton,
   Tooltip,
   Drawer,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Article as ContentIcon,
   Settings as SettingsIcon,
   AdminPanelSettings as AdvancedSettingsIcon,
+  School as SchoolIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';

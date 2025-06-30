@@ -3,6 +3,7 @@ import {
   Box,
   Typography,
   Card,
+  CardContent,
   Grid,
   Button,
   TextField,
@@ -18,6 +19,7 @@ import {
   Tabs,
   IconButton,
   Tooltip,
+  InputAdornment,
   Paper,
   List,
   ListItem,
@@ -31,9 +33,12 @@ import {
   Download as DownloadIcon,
   Upload as UploadIcon,
   Refresh as RefreshIcon,
+  Settings as SettingsIcon,
   Storage as DatabaseIcon,
   CloudDownload as BackupIcon,
+  CloudUpload as RestoreIcon,
   Delete as DeleteIcon,
+  Info as InfoIcon,
   Warning as WarningIcon,
   CheckCircle as CheckIcon,
   PlayArrow as PlayIcon,
@@ -120,7 +125,7 @@ const AdvancedSettings: React.FC = () => {
     }
   }, [setupState.firebaseConfig]);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 

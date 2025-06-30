@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   AppBar as MuiAppBar,
   Toolbar,
@@ -25,9 +25,11 @@ import SearchResults from '../Search/SearchResults';
 
 interface AppBarProps {
   onMenuClick: () => void;
+  sidebarOpen: boolean;
+  sidebarWidth: number;
 }
 
-const AppBar: React.FC<AppBarProps> = ({ onMenuClick }) => {
+const AppBar: React.FC<AppBarProps> = ({ onMenuClick, sidebarOpen, sidebarWidth }) => {
   const { user } = useAuth();
   const { config } = useAppConfig();
   const { searchQuery, setSearchQuery, clearSearch, showSearchResults } = useSearch();
@@ -101,7 +103,7 @@ const AppBar: React.FC<AppBarProps> = ({ onMenuClick }) => {
     }
   };
 
-  const handleSearchResultClick = () => {
+  const handleSearchResultClick = (resultId: string) => {
     setSearchFocused(false);
     setMobileSearchOpen(false);
   };
@@ -403,13 +405,13 @@ const AppBar: React.FC<AppBarProps> = ({ onMenuClick }) => {
               
               {/* Mobile Search Results */}
               {showSearchResults && (
-                              <SearchResults
-                onResultClick={() => {
-                  handleSearchResultClick();
-                  setMobileSearchOpen(false);
-                }}
-                onClose={() => setMobileSearchOpen(false)}
-              />
+                <SearchResults
+                  onResultClick={(resultId) => {
+                    handleSearchResultClick(resultId);
+                    setMobileSearchOpen(false);
+                  }}
+                  onClose={() => setMobileSearchOpen(false)}
+                />
               )}
             </Box>
           </ClickAwayListener>

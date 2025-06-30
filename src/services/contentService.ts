@@ -8,6 +8,8 @@ import {
   deleteDoc,
   query,
   orderBy,
+  QuerySnapshot,
+  DocumentData,
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { ContentNode, FirestoreContentNode } from '../types';
@@ -321,12 +323,11 @@ export class ContentService {
     data: Partial<FirestoreContentNode>,
     nodePath?: string[]
   ): Promise<void> {
-    let fullPath: string[];
-    
     try {
       console.log('📝 Updating node:', { nodeId, data, nodePath });
       
       let docRef;
+      let fullPath: string[];
       
       if (nodePath && nodePath.length > 0) {
         // Use the provided node path (should be a document path with even number of segments)
@@ -346,7 +347,7 @@ export class ContentService {
       console.log('✅ Node updated successfully');
     } catch (error) {
       console.error('❌ Error updating node:', error);
-      console.error('❌ Failed path:', fullPath!);
+      console.error('❌ Failed path:', fullPath);
       throw error;
     }
   }

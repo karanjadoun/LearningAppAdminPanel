@@ -13,6 +13,7 @@ import {
   Alert,
   CircularProgress,
   Divider,
+  Chip,
   Paper,
   LinearProgress,
   Link,
@@ -24,6 +25,8 @@ import {
   Storage as DatabaseIcon,
   CheckCircle as CheckIcon,
   Launch as LaunchIcon,
+  Info as InfoIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useSetup } from '../../contexts/SetupContext';
 import { useAppConfig } from '../../contexts/AppConfigContext';
