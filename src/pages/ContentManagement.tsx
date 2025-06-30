@@ -611,26 +611,26 @@ const ContentManagement: React.FC = () => {
                   <MenuItem value="">
                     <em>No Icon</em>
                   </MenuItem>
-                  <MenuItem value="ic_math">📐 Mathematics</MenuItem>
-                  <MenuItem value="ic_science">🔬 Science</MenuItem>
-                  <MenuItem value="ic_history">📚 History</MenuItem>
-                  <MenuItem value="ic_geography">🌍 Geography</MenuItem>
-                  <MenuItem value="ic_english">📝 English</MenuItem>
-                  <MenuItem value="ic_physics">⚛️ Physics</MenuItem>
-                  <MenuItem value="ic_chemistry">🧪 Chemistry</MenuItem>
-                  <MenuItem value="ic_biology">🧬 Biology</MenuItem>
-                  <MenuItem value="ic_computer">💻 Computer Science</MenuItem>
-                  <MenuItem value="ic_art">🎨 Art</MenuItem>
-                  <MenuItem value="ic_music">🎵 Music</MenuItem>
-                  <MenuItem value="ic_sports">⚽ Sports</MenuItem>
-                  <MenuItem value="ic_language">🌐 Languages</MenuItem>
-                  <MenuItem value="ic_economics">💰 Economics</MenuItem>
-                  <MenuItem value="ic_philosophy">🤔 Philosophy</MenuItem>
-                  <MenuItem value="ic_psychology">🧠 Psychology</MenuItem>
-                  <MenuItem value="ic_literature">📖 Literature</MenuItem>
-                  <MenuItem value="ic_engineering">⚙️ Engineering</MenuItem>
-                  <MenuItem value="ic_medicine">⚕️ Medicine</MenuItem>
-                  <MenuItem value="ic_law">⚖️ Law</MenuItem>
+                  <MenuItem value="ic_math">📐 ic_math</MenuItem>
+                  <MenuItem value="ic_science">🔬 ic_science</MenuItem>
+                  <MenuItem value="ic_history">📚 ic_history</MenuItem>
+                  <MenuItem value="ic_geography">🌍 ic_geography</MenuItem>
+                  <MenuItem value="ic_english">📝 ic_english</MenuItem>
+                  <MenuItem value="ic_physics">⚛️ ic_physics</MenuItem>
+                  <MenuItem value="ic_chemistry">🧪 ic_chemistry</MenuItem>
+                  <MenuItem value="ic_biology">🧬 ic_biology</MenuItem>
+                  <MenuItem value="ic_computer">💻 ic_computer</MenuItem>
+                  <MenuItem value="ic_art">🎨 ic_art</MenuItem>
+                  <MenuItem value="ic_music">🎵 ic_music</MenuItem>
+                  <MenuItem value="ic_sports">⚽ ic_sports</MenuItem>
+                  <MenuItem value="ic_language">🌐 ic_language</MenuItem>
+                  <MenuItem value="ic_economics">💰 ic_economics</MenuItem>
+                  <MenuItem value="ic_philosophy">🤔 ic_philosophy</MenuItem>
+                  <MenuItem value="ic_psychology">🧠 ic_psychology</MenuItem>
+                  <MenuItem value="ic_literature">📖 ic_literature</MenuItem>
+                  <MenuItem value="ic_engineering">⚙️ ic_engineering</MenuItem>
+                  <MenuItem value="ic_medicine">⚕️ ic_medicine</MenuItem>
+                  <MenuItem value="ic_law">⚖️ ic_law</MenuItem>
                 </Select>
               </FormControl>
             )}
