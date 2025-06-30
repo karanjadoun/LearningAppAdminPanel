@@ -559,11 +559,13 @@ export class ContentService {
               deleteDocRef = doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2], childDocumentPath[3], childDocumentPath[4]);
             } else {
               console.warn('⚠️ Unexpected child document path length:', childDocumentPath.length);
-              continue; // Skip this child
+              return; // Skip this child
             }
             
-            await deleteDoc(deleteDocRef);
-            console.log('✅ Child document deleted:', childDoc.id);
+            if (deleteDocRef) {
+              await deleteDoc(deleteDocRef);
+              console.log('✅ Child document deleted:', childDoc.id);
+            }
           });
           
           await Promise.all(deletePromises);
