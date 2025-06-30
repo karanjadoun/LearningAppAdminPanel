@@ -68,6 +68,33 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// Helper function to get emoji for icon names
+const getIconEmoji = (iconName: string): string => {
+  const iconMap: { [key: string]: string } = {
+    'ic_math': '📐',
+    'ic_science': '🔬',
+    'ic_history': '📚',
+    'ic_geography': '🌍',
+    'ic_english': '📝',
+    'ic_physics': '⚛️',
+    'ic_chemistry': '🧪',
+    'ic_biology': '🧬',
+    'ic_computer': '💻',
+    'ic_art': '🎨',
+    'ic_music': '🎵',
+    'ic_sports': '⚽',
+    'ic_language': '🌐',
+    'ic_economics': '💰',
+    'ic_philosophy': '🤔',
+    'ic_psychology': '🧠',
+    'ic_literature': '📖',
+    'ic_engineering': '⚙️',
+    'ic_medicine': '⚕️',
+    'ic_law': '⚖️',
+  };
+  return iconMap[iconName] || '📁';
+};
+
 const ContentManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -317,6 +344,7 @@ const ContentManagement: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
+                  <TableCell>Icon</TableCell>
                   <TableCell>Topics</TableCell>
                   <TableCell>Color</TableCell>
                   <TableCell align="right">Actions</TableCell>
@@ -326,10 +354,16 @@ const ContentManagement: React.FC = () => {
                 {categories.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <CategoryIcon sx={{ color: category.colorHex }} />
-                        <Typography>{category.title}</Typography>
-                      </Box>
+                      <Typography>{category.title}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      {category.icon ? (
+                        <Box sx={{ fontSize: '1.5rem' }}>
+                          {getIconEmoji(category.icon)}
+                        </Box>
+                      ) : (
+                        <CategoryIcon sx={{ color: category.colorHex, fontSize: '1.5rem' }} />
+                      )}
                     </TableCell>
                     <TableCell>
                       <Chip 
@@ -362,7 +396,7 @@ const ContentManagement: React.FC = () => {
                 ))}
                 {categories.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} align="center">
+                    <TableCell colSpan={5} align="center">
                       <Typography color="text.secondary">No categories yet. Create your first category!</Typography>
                     </TableCell>
                   </TableRow>
@@ -396,6 +430,7 @@ const ContentManagement: React.FC = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
+                    <TableCell>Icon</TableCell>
                     <TableCell>Category</TableCell>
                     <TableCell>Content Items</TableCell>
                     <TableCell align="right">Actions</TableCell>
@@ -405,10 +440,16 @@ const ContentManagement: React.FC = () => {
                   {topics.map((topic) => (
                     <TableRow key={topic.id}>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <TopicIcon sx={{ color: topic.colorHex || 'primary.main' }} />
-                          <Typography>{topic.title}</Typography>
-                        </Box>
+                        <Typography>{topic.title}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        {topic.icon ? (
+                          <Box sx={{ fontSize: '1.5rem' }}>
+                            {getIconEmoji(topic.icon)}
+                          </Box>
+                        ) : (
+                          <TopicIcon sx={{ color: topic.colorHex || 'primary.main', fontSize: '1.5rem' }} />
+                        )}
                       </TableCell>
                       <TableCell>
                         <Chip 
@@ -434,7 +475,7 @@ const ContentManagement: React.FC = () => {
                   ))}
                   {topics.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Typography color="text.secondary">No topics yet. Create your first topic!</Typography>
                       </TableCell>
                     </TableRow>
@@ -558,6 +599,41 @@ const ContentManagement: React.FC = () => {
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
             />
+
+            {(activeTab === 0 || activeTab === 1) && (
+              <FormControl fullWidth>
+                <InputLabel>Icon</InputLabel>
+                <Select
+                  value={formData.icon}
+                  onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
+                  label="Icon"
+                >
+                  <MenuItem value="">
+                    <em>No Icon</em>
+                  </MenuItem>
+                  <MenuItem value="ic_math">📐 Mathematics</MenuItem>
+                  <MenuItem value="ic_science">🔬 Science</MenuItem>
+                  <MenuItem value="ic_history">📚 History</MenuItem>
+                  <MenuItem value="ic_geography">🌍 Geography</MenuItem>
+                  <MenuItem value="ic_english">📝 English</MenuItem>
+                  <MenuItem value="ic_physics">⚛️ Physics</MenuItem>
+                  <MenuItem value="ic_chemistry">🧪 Chemistry</MenuItem>
+                  <MenuItem value="ic_biology">🧬 Biology</MenuItem>
+                  <MenuItem value="ic_computer">💻 Computer Science</MenuItem>
+                  <MenuItem value="ic_art">🎨 Art</MenuItem>
+                  <MenuItem value="ic_music">🎵 Music</MenuItem>
+                  <MenuItem value="ic_sports">⚽ Sports</MenuItem>
+                  <MenuItem value="ic_language">🌐 Languages</MenuItem>
+                  <MenuItem value="ic_economics">💰 Economics</MenuItem>
+                  <MenuItem value="ic_philosophy">🤔 Philosophy</MenuItem>
+                  <MenuItem value="ic_psychology">🧠 Psychology</MenuItem>
+                  <MenuItem value="ic_literature">📖 Literature</MenuItem>
+                  <MenuItem value="ic_engineering">⚙️ Engineering</MenuItem>
+                  <MenuItem value="ic_medicine">⚕️ Medicine</MenuItem>
+                  <MenuItem value="ic_law">⚖️ Law</MenuItem>
+                </Select>
+              </FormControl>
+            )}
 
             {activeTab === 1 && (
               <FormControl fullWidth required>
