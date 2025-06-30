@@ -30,6 +30,7 @@ import ContentTree from '../components/Content/ContentTree';
 import ContentEditor from '../components/Content/ContentEditor';
 import { ContentNode, FirestoreContentNode } from '../types';
 import { contentService } from '../services/contentService';
+import { auth } from '../config/firebase';
 
 const ContentManagement: React.FC = () => {
   const [selectedNodeId, setSelectedNodeId] = useState<string>('');
@@ -111,6 +112,7 @@ const ContentManagement: React.FC = () => {
   };
 
   // Handle delete confirmation
+  // Handle delete confirmation
   const handleDelete = (node: ContentNode) => {
     setCurrentNode(node);
     setDeleteDialogOpen(true);
@@ -121,13 +123,15 @@ const ContentManagement: React.FC = () => {
     if (!currentNode) return;
 
     try {
-      console.log('🗑️ Deleting node:', {
-        id: currentNode.id,
-        title: currentNode.title,
-        fullPath: currentNode.fullPath,
-        isRoot: currentNode.isRoot
-      });
-
+      console.log('🗑️ Starting delete for:', currentNode.title);
+      console.log('🔐 Current user:', auth.currentUser?.email);
+      console.log('🔐 User UID:', auth.currentUser?.uid);
+      console.log('📍 Node path:', currentNode.fullPath);
+      
+      if (!auth.currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
       // Pass the full path for nested nodes, empty array for root categories
       const pathToUse = currentNode.fullPath && currentNode.fullPath.length > 0 
         ? currentNode.fullPath 
@@ -144,8 +148,8 @@ const ContentManagement: React.FC = () => {
         setSelectedNodeId('');
       }
     } catch (error) {
-      console.error('❌ Error deleting node:', error);
-      showSnackbar('Error deleting item. Please try again.', 'error');
+      console.error('❌ Delete error:', error);
+      showSnackbar('Error deleting item: ' + (error as Error).message, 'error');
     }
   };
 
@@ -324,11 +328,11 @@ const ContentManagement: React.FC = () => {
             {!currentNode?.content && " This will also delete all child items."}
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
-          </Button>
+                  <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button onClick={confirmDelete} color="error" variant="contained">
+              Delete
+            </Button>
         </DialogActions>
       </Dialog>
 
