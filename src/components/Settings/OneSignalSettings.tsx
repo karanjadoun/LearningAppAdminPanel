@@ -7,7 +7,6 @@ import {
   Grid,
   Button,
   TextField,
-  Divider,
   Alert,
   Snackbar,
   FormControlLabel,
@@ -31,7 +30,6 @@ import {
   Notifications as NotificationsIcon,
   Send as SendIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
   Info as InfoIcon,
   Save as SaveIcon,
   PlayArrow as TestIcon,
@@ -41,7 +39,7 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { appConfigService } from '../../services/appConfigService';
-import { OneSignalConfig, TestNotification, OneSignalResponse } from '../../types';
+import { OneSignalConfig, TestNotification } from '../../types';
 
 const OneSignalSettings: React.FC = () => {
   const [config, setConfig] = useState<OneSignalConfig | null>(null);

@@ -95,7 +95,10 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
     try {
       // This is a basic validation - in a real app, you'd want to test actual Firebase connection
       const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
-      const isValid = requiredFields.every(field => config[field as keyof FirebaseConfig]?.trim().length > 0);
+      const isValid = requiredFields.every(field => {
+        const value = config[field as keyof FirebaseConfig];
+        return value && typeof value === 'string' && value.trim().length > 0;
+      });
       
       if (!isValid) {
         throw new Error('Missing required Firebase configuration fields');

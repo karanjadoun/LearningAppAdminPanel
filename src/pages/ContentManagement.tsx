@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Container,
   Typography,
-  Paper,
-  Grid,
   Snackbar,
   Alert,
   Dialog,
@@ -13,7 +10,6 @@ import {
   DialogActions,
   Button,
   Chip,
-  IconButton,
   Card,
   CardContent,
   Divider,
@@ -171,12 +167,12 @@ const ContentManagement: React.FC = () => {
           const parentPath = parentNode.fullPath ? [...parentNode.fullPath, 'children'] : [];
           console.log('📁 Calculated parent path for new child:', parentPath);
           
-          await contentService.createChild(parentNode.id, data, parentPath);
+          await contentService.createChild(parentNode.id, data as Omit<FirestoreContentNode, 'order'>, parentPath);
           showSnackbar('Item created successfully', 'success');
         } else {
           // Creating a root category
           console.log('🌳 Creating root category');
-          await contentService.createRootCategory(data);
+          await contentService.createRootCategory(data as Omit<FirestoreContentNode, 'order'>);
           showSnackbar('Category created successfully', 'success');
         }
       } else {
