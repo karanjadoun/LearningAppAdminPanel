@@ -8,8 +8,6 @@ import {
   deleteDoc,
   query,
   orderBy,
-  QuerySnapshot,
-  DocumentData,
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { ContentNode, FirestoreContentNode } from '../types';
@@ -36,7 +34,11 @@ export class ContentService {
 
     while (true) {
       try {
-        const docRef = doc(db, ...collectionPath, slug);
+        const docRef = collectionPath.length === 1 
+          ? doc(db, collectionPath[0], slug)
+          : collectionPath.length === 3
+          ? doc(db, collectionPath[0], collectionPath[1], collectionPath[2], slug)
+          : doc(db, collectionPath[0], slug);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
@@ -141,12 +143,12 @@ export class ContentService {
       if (parentFullPath.length === 2) {
         // Root category children: learning_data/categoryId/children
         childrenPath = [MAIN_COLLECTION, parentId, CHILDREN_COLLECTION];
-        childrenRef = collection(db, ...childrenPath);
+        childrenRef = collection(db, MAIN_COLLECTION, parentId, CHILDREN_COLLECTION);
         console.log(`📁 Root category children path:`, childrenPath);
       } else if (parentFullPath.length === 4) {
         // Topic children: learning_data/categoryId/children/topicId/children  
         childrenPath = [...parentFullPath, CHILDREN_COLLECTION];
-        childrenRef = collection(db, ...childrenPath);
+        childrenRef = collection(db, parentFullPath[0], parentFullPath[1], parentFullPath[2], parentFullPath[3], CHILDREN_COLLECTION);
         console.log(`📁 Topic children path:`, childrenPath);
       } else {
         throw new Error(`Invalid parent path length: ${parentFullPath.length}. Expected 2 or 4.`);
@@ -303,7 +305,9 @@ export class ContentService {
       const uniqueId = await this.generateUniqueId(data.title, collectionPath);
       
       // Create document with custom ID
-      const docRef = doc(db, ...collectionPath, uniqueId);
+      const docRef = collectionPath.length === 3 
+        ? doc(db, collectionPath[0], collectionPath[1], collectionPath[2], uniqueId)
+        : doc(db, collectionPath[0], uniqueId);
       await setDoc(docRef, {
         ...data,
         order: data.order || 0,
@@ -332,12 +336,16 @@ export class ContentService {
       if (nodePath && nodePath.length > 0) {
         // Use the provided node path (should be a document path with even number of segments)
         fullPath = nodePath;
-        docRef = doc(db, ...fullPath);
+        docRef = nodePath.length === 2 
+          ? doc(db, nodePath[0], nodePath[1])
+          : nodePath.length === 4
+          ? doc(db, nodePath[0], nodePath[1], nodePath[2], nodePath[3])
+          : doc(db, nodePath[0], nodePath[1]);
         console.log('📁 Using provided path:', fullPath);
       } else {
         // Fallback to root category path
         fullPath = [MAIN_COLLECTION, nodeId];
-        docRef = doc(db, ...fullPath);
+        docRef = doc(db, MAIN_COLLECTION, nodeId);
         console.log('📁 Using root category path:', fullPath);
       }
       
@@ -347,7 +355,7 @@ export class ContentService {
       console.log('✅ Node updated successfully');
     } catch (error) {
       console.error('❌ Error updating node:', error);
-      console.error('❌ Failed path:', fullPath);
+      console.error('❌ Failed path:', nodePath || [MAIN_COLLECTION, nodeId]);
       throw error;
     }
   }
@@ -367,7 +375,11 @@ export class ContentService {
       } else {
         // Nested node
         documentPath = path;
-        docRef = doc(db, ...path);
+        docRef = path.length === 2 
+          ? doc(db, path[0], path[1])
+          : path.length === 4
+          ? doc(db, path[0], path[1], path[2], path[3])
+          : doc(db, path[0], path[1]);
       }
       
       // First, recursively delete all subcollections
@@ -391,7 +403,9 @@ export class ContentService {
       
       // Check if this document has a 'children' subcollection
       const childrenCollectionPath = [...documentPath, CHILDREN_COLLECTION];
-      const childrenRef = collection(db, ...childrenCollectionPath);
+      const childrenRef = documentPath.length === 2 
+        ? collection(db, documentPath[0], documentPath[1], CHILDREN_COLLECTION)
+        : collection(db, documentPath[0], documentPath[1], documentPath[2], documentPath[3], CHILDREN_COLLECTION);
       
       try {
         const childrenSnapshot = await getDocs(childrenRef);
@@ -408,7 +422,10 @@ export class ContentService {
             await this.deleteAllSubcollections(childDocumentPath);
             
             // Then delete the child document
-            await deleteDoc(doc(db, ...childDocumentPath));
+            const deleteDocRef = childDocumentPath.length === 3
+              ? doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2])
+              : doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2], childDocumentPath[3], childDocumentPath[4]);
+            await deleteDoc(deleteDocRef);
             console.log('✅ Child document deleted:', childDoc.id);
           });
           
