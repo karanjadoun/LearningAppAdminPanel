@@ -368,20 +368,49 @@ export class ContentService {
       let docRef;
       let documentPath: string[];
       
-      if (path.length === 0) {
-        // Root category
+      // Enhanced logic to handle both old and new data formats
+      if (path.length === 0 || !path || path.length === 1) {
+        // Root category or old data format
+        console.log('📁 Treating as root category or old data format');
         documentPath = [MAIN_COLLECTION, nodeId];
         docRef = doc(db, MAIN_COLLECTION, nodeId);
-      } else {
-        // Nested node
+      } else if (path.length === 2 && path[0] === MAIN_COLLECTION) {
+        // Root category with proper path: ['learning_data', 'categoryId']
+        console.log('📁 Root category with proper path');
         documentPath = path;
-        docRef = path.length === 2 
-          ? doc(db, path[0], path[1])
-          : path.length === 4
-          ? doc(db, path[0], path[1], path[2], path[3])
-          : doc(db, path[0], path[1]);
+        docRef = doc(db, path[0], path[1]);
+      } else if (path.length === 4) {
+        // Topic: ['learning_data', 'categoryId', 'children', 'topicId']
+        console.log('📂 Topic with proper path');
+        documentPath = path;
+        docRef = doc(db, path[0], path[1], path[2], path[3]);
+      } else if (path.length === 6) {
+        // Content: ['learning_data', 'categoryId', 'children', 'topicId', 'children', 'contentId']
+        console.log('📄 Content with proper path');
+        documentPath = path;
+        docRef = doc(db, path[0], path[1], path[2], path[3], path[4], path[5]);
+      } else {
+        // Fallback: try to construct path or treat as root
+        console.log('⚠️ Unknown path format, treating as root category');
+        documentPath = [MAIN_COLLECTION, nodeId];
+        docRef = doc(db, MAIN_COLLECTION, nodeId);
       }
       
+      console.log('📍 Final document path:', documentPath.join('/'));
+      
+      // Try multiple deletion strategies for robustness
+      await this.deleteNodeWithFallback(docRef, documentPath, nodeId);
+      
+      console.log('✅ Delete operation completed for:', nodeId);
+    } catch (error) {
+      console.error('❌ Error deleting node:', error);
+      throw error;
+    }
+  }
+
+  // Enhanced delete method with fallback strategies
+  private async deleteNodeWithFallback(docRef: any, documentPath: string[], nodeId: string): Promise<void> {
+    try {
       // First, recursively delete all subcollections
       await this.deleteAllSubcollections(documentPath);
       
@@ -389,10 +418,98 @@ export class ContentService {
       console.log('🗑️ Deleting document:', documentPath.join('/'));
       await deleteDoc(docRef);
       
-      console.log('✅ Delete operation completed for:', nodeId);
     } catch (error) {
-      console.error('❌ Error deleting node:', error);
+      console.warn('⚠️ Primary delete failed, trying fallback approaches:', error);
+      
+      // Fallback 1: Try as root category
+      if (documentPath.length !== 2 || documentPath[0] !== MAIN_COLLECTION) {
+        console.log('🔄 Fallback 1: Trying as root category');
+        try {
+          const fallbackRef = doc(db, MAIN_COLLECTION, nodeId);
+          await this.deleteAllSubcollections([MAIN_COLLECTION, nodeId]);
+          await deleteDoc(fallbackRef);
+          console.log('✅ Fallback 1 successful');
+          return;
+        } catch (fallback1Error) {
+          console.warn('❌ Fallback 1 failed:', fallback1Error);
+        }
+      }
+      
+      // Fallback 2: Try to find the document by searching
+      console.log('🔄 Fallback 2: Searching for document in database');
+      try {
+        const found = await this.findAndDeleteDocument(nodeId);
+        if (found) {
+          console.log('✅ Fallback 2 successful - found and deleted');
+          return;
+        }
+      } catch (fallback2Error) {
+        console.warn('❌ Fallback 2 failed:', fallback2Error);
+      }
+      
+      // If all fallbacks fail, throw the original error
       throw error;
+    }
+  }
+
+  // Search for and delete a document by ID across the database
+  private async findAndDeleteDocument(nodeId: string): Promise<boolean> {
+    try {
+      // First check root categories
+      const rootRef = doc(db, MAIN_COLLECTION, nodeId);
+      const rootSnap = await getDoc(rootRef);
+      
+      if (rootSnap.exists()) {
+        console.log('📁 Found as root category:', nodeId);
+        await this.deleteAllSubcollections([MAIN_COLLECTION, nodeId]);
+        await deleteDoc(rootRef);
+        return true;
+      }
+      
+      // Search in subcollections
+      const categoriesRef = collection(db, MAIN_COLLECTION);
+      const categoriesSnapshot = await getDocs(categoriesRef);
+      
+      for (const categoryDoc of categoriesSnapshot.docs) {
+        // Check in category/children/
+        try {
+          const topicRef = doc(db, MAIN_COLLECTION, categoryDoc.id, CHILDREN_COLLECTION, nodeId);
+          const topicSnap = await getDoc(topicRef);
+          
+          if (topicSnap.exists()) {
+            console.log('📂 Found as topic:', nodeId, 'in category:', categoryDoc.id);
+            await this.deleteAllSubcollections([MAIN_COLLECTION, categoryDoc.id, CHILDREN_COLLECTION, nodeId]);
+            await deleteDoc(topicRef);
+            return true;
+          }
+          
+          // Check in category/children/topic/children/
+          const topicsRef = collection(db, MAIN_COLLECTION, categoryDoc.id, CHILDREN_COLLECTION);
+          const topicsSnapshot = await getDocs(topicsRef);
+          
+          for (const topicDoc of topicsSnapshot.docs) {
+            try {
+              const contentRef = doc(db, MAIN_COLLECTION, categoryDoc.id, CHILDREN_COLLECTION, topicDoc.id, CHILDREN_COLLECTION, nodeId);
+              const contentSnap = await getDoc(contentRef);
+              
+              if (contentSnap.exists()) {
+                console.log('📄 Found as content:', nodeId, 'in topic:', topicDoc.id, 'category:', categoryDoc.id);
+                await deleteDoc(contentRef);
+                return true;
+              }
+            } catch (contentError) {
+              // Continue searching
+            }
+          }
+        } catch (topicError) {
+          // Continue searching
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('❌ Error in findAndDeleteDocument:', error);
+      return false;
     }
   }
 
@@ -403,9 +520,20 @@ export class ContentService {
       
       // Check if this document has a 'children' subcollection
       const childrenCollectionPath = [...documentPath, CHILDREN_COLLECTION];
-      const childrenRef = documentPath.length === 2 
-        ? collection(db, documentPath[0], documentPath[1], CHILDREN_COLLECTION)
-        : collection(db, documentPath[0], documentPath[1], documentPath[2], documentPath[3], CHILDREN_COLLECTION);
+      let childrenRef;
+      
+      // Handle different path lengths
+      if (documentPath.length === 2) {
+        // Root category: learning_data/categoryId/children
+        childrenRef = collection(db, documentPath[0], documentPath[1], CHILDREN_COLLECTION);
+      } else if (documentPath.length === 4) {
+        // Topic: learning_data/categoryId/children/topicId/children
+        childrenRef = collection(db, documentPath[0], documentPath[1], documentPath[2], documentPath[3], CHILDREN_COLLECTION);
+      } else {
+        // Unknown format, skip subcollection deletion
+        console.log('⚠️ Unknown document path format, skipping subcollection deletion');
+        return;
+      }
       
       try {
         const childrenSnapshot = await getDocs(childrenRef);
@@ -422,9 +550,18 @@ export class ContentService {
             await this.deleteAllSubcollections(childDocumentPath);
             
             // Then delete the child document
-            const deleteDocRef = childDocumentPath.length === 3
-              ? doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2])
-              : doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2], childDocumentPath[3], childDocumentPath[4]);
+            let deleteDocRef;
+            if (childDocumentPath.length === 3) {
+              // category/children/topic
+              deleteDocRef = doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2]);
+            } else if (childDocumentPath.length === 5) {
+              // category/children/topic/children/content
+              deleteDocRef = doc(db, childDocumentPath[0], childDocumentPath[1], childDocumentPath[2], childDocumentPath[3], childDocumentPath[4]);
+            } else {
+              console.warn('⚠️ Unexpected child document path length:', childDocumentPath.length);
+              continue; // Skip this child
+            }
+            
             await deleteDoc(deleteDocRef);
             console.log('✅ Child document deleted:', childDoc.id);
           });
@@ -440,7 +577,8 @@ export class ContentService {
       }
     } catch (error) {
       console.error('❌ Error deleting subcollections:', error);
-      throw error;
+      // Don't throw error here, continue with parent deletion
+      console.log('⚠️ Continuing with parent deletion despite subcollection error');
     }
   }
 
