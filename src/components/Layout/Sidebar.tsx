@@ -20,6 +20,7 @@ import {
   Article as ContentIcon,
   Settings as SettingsIcon,
   AdminPanelSettings as AdvancedSettingsIcon,
+  MobileScreenShare as AppSettingsIcon,
   School as SchoolIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
@@ -53,6 +54,12 @@ const menuItems: MenuItem[] = [
     label: 'Content Management',
     icon: ContentIcon,
     path: '/content',
+  },
+  {
+    id: 'app-settings',
+    label: 'App Settings',
+    icon: AppSettingsIcon,
+    path: '/app-settings',
   },
   {
     id: 'settings',
