@@ -4,6 +4,9 @@ This feature allows you to control your mobile app's settings dynamically throug
 
 ## 🎯 **What You Can Control**
 
+### **Authentication Control**
+- **Google Authentication Required** - Toggle to enable/disable mandatory Google sign-in
+
 ### **App Identity**
 - **App Name** - Display name of your learning app
 
@@ -45,6 +48,7 @@ Create the following document in your Firestore database:
 
 ```json
 {
+  "authEnabled": false,
   "appName": "LearningApp",
   
   "homeGreeting": "Hi, %1$s",
@@ -112,6 +116,9 @@ implementation 'com.google.code.gson:gson:2.8.9'
 ```kotlin
 // AppSettings.kt
 data class AppSettings(
+    // Authentication Control
+    val authEnabled: Boolean = false,
+    
     // App Identity
     val appName: String = "LearningApp",
     
@@ -360,6 +367,28 @@ class SettingsActivity : AppCompatActivity() {
 3. **Mobile App**: App fetches settings on startup and caches them for 24 hours
 4. **Offline Support**: If Firestore is unavailable, cached settings are used
 5. **Automatic Updates**: Settings refresh automatically every 24 hours or on app restart
+
+## 🔐 **Authentication Control Details**
+
+### **When `authEnabled = false` (Default - Free Access):**
+- ✅ Users can access all app content without signing in
+- ✅ No Google authentication required
+- ✅ App launches directly to home screen
+- ✅ Settings screen shows no user profile
+- ✅ Perfect for public educational content
+
+### **When `authEnabled = true` (Authentication Required):**
+- 🔐 Users must sign in with Google before accessing any content
+- 🔐 App automatically redirects to authentication screen
+- 🔐 Settings screen shows user profile and sign-out option  
+- 🔐 All content is gated behind authentication
+- 🔐 Perfect for premium or restricted content
+
+### **Real-time Authentication Toggle:**
+- Changes take effect **immediately** in the app
+- No app restart required for authentication changes
+- Users see authentication requirements update in real-time
+- Seamless transition between authenticated and public modes
 
 ## ⚡ **Performance Features**
 

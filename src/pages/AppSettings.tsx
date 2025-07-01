@@ -14,6 +14,9 @@ import {
   InputAdornment,
   Tooltip,
   IconButton,
+  Switch,
+  FormControlLabel,
+  FormGroup,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -31,11 +34,17 @@ import {
   Message as MessageIcon,
   Settings as SettingsIcon,
   Visibility as PreviewIcon,
+  Security as SecurityIcon,
+  LockOpen as LockOpenIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 interface AppSettings {
+  // Authentication Control
+  authEnabled: boolean;
+  
   // App Identity
   appName: string;
   
@@ -72,6 +81,9 @@ interface AppSettings {
 }
 
 const defaultSettings: AppSettings = {
+  // Authentication Control
+  authEnabled: false,
+  
   // App Identity
   appName: 'LearningApp',
   
@@ -210,6 +222,15 @@ const AppSettings: React.FC = () => {
     }));
   };
 
+  const handleSwitchChange = (field: keyof AppSettings) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: event.target.checked,
+    }));
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
@@ -263,6 +284,69 @@ const AppSettings: React.FC = () => {
       </Alert>
 
       <Grid container spacing={3}>
+        {/* Authentication Control */}
+        <Grid item xs={12}>
+          <Card sx={{ border: '2px solid', borderColor: settings.authEnabled ? 'error.main' : 'success.main' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <SecurityIcon color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  Authentication Control
+                </Typography>
+                {settings.authEnabled ? (
+                  <LockIcon color="error" />
+                ) : (
+                  <LockOpenIcon color="success" />
+                )}
+              </Box>
+              
+              <Alert 
+                severity={settings.authEnabled ? "warning" : "info"} 
+                sx={{ mb: 3 }}
+              >
+                <Typography variant="body2">
+                  <strong>
+                    {settings.authEnabled 
+                      ? "⚠️ Authentication Required: Users must sign in with Google to access the app"
+                      : "🔓 Free Access: Users can access all content without signing in"
+                    }
+                  </strong>
+                </Typography>
+              </Alert>
+
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={settings.authEnabled}
+                      onChange={handleSwitchChange('authEnabled')}
+                      color={settings.authEnabled ? "error" : "success"}
+                      size="medium"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body1" fontWeight={600}>
+                        Google Authentication Required
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        ({settings.authEnabled ? 'ON' : 'OFF'})
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </FormGroup>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                {settings.authEnabled 
+                  ? "🔐 When enabled, users must sign in with Google before accessing any app content. Perfect for premium or restricted content."
+                  : "🆓 When disabled, users can access all app content freely without authentication. Ideal for public educational content."
+                }
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* App Identity */}
         <Grid item xs={12}>
           <Card>
