@@ -531,7 +531,7 @@ const AppSettings: React.FC = () => {
                       ),
                     }}
                     helperText="Link to your app's privacy policy"
-                    error={settings.privacyPolicyUrl && !isValidUrl(settings.privacyPolicyUrl)}
+                    error={Boolean(settings.privacyPolicyUrl && !isValidUrl(settings.privacyPolicyUrl))}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -550,7 +550,7 @@ const AppSettings: React.FC = () => {
                       ),
                     }}
                     helperText="Link to your other apps on Play Store"
-                    error={settings.moreAppsUrl && !isValidUrl(settings.moreAppsUrl)}
+                    error={Boolean(settings.moreAppsUrl && !isValidUrl(settings.moreAppsUrl))}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
