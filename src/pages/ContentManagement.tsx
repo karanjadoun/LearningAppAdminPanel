@@ -30,6 +30,8 @@ import {
   CircularProgress,
   Menu,
   MenuItem as MenuItemComponent,
+  InputAdornment,
+  Grid,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,6 +41,9 @@ import {
   Folder as CategoryIcon,
   Topic as TopicIcon,
   Article as ContentIcon,
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/contentService';
@@ -103,6 +108,21 @@ const ContentManagement: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<ContentNode | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   
+  // Filter states for Topics
+  const [topicFilters, setTopicFilters] = useState({
+    search: '',
+    categoryId: '',
+    hasContent: '',
+  });
+
+  // Filter states for Content
+  const [contentFilters, setContentFilters] = useState({
+    search: '',
+    categoryId: '',
+    topicId: '',
+    hasContent: '',
+  });
+  
   // Form states
   const [formData, setFormData] = useState({
     title: '',
@@ -139,10 +159,10 @@ const ContentManagement: React.FC = () => {
 
   // Extract categories, topics, and content from tree
   const categories = contentTree || [];
-  const topics = categories.flatMap(cat => 
+  const allTopics = categories.flatMap(cat => 
     (cat.children || []).map(topic => ({ ...topic, categoryId: cat.id, categoryTitle: cat.title }))
   );
-  const content = topics.flatMap(topic => 
+  const allContent = allTopics.flatMap(topic => 
     (topic.children || []).map(content => ({ 
       ...content, 
       categoryId: (topic as any).categoryId, 
@@ -151,6 +171,29 @@ const ContentManagement: React.FC = () => {
       topicTitle: topic.title 
     }))
   );
+
+  // Apply filters to topics
+  const topics = allTopics.filter(topic => {
+    const matchesSearch = topic.title.toLowerCase().includes(topicFilters.search.toLowerCase());
+    const matchesCategory = !topicFilters.categoryId || (topic as any).categoryId === topicFilters.categoryId;
+    const matchesHasContent = !topicFilters.hasContent || 
+      (topicFilters.hasContent === 'yes' && (topic.children?.length || 0) > 0) ||
+      (topicFilters.hasContent === 'no' && (topic.children?.length || 0) === 0);
+    
+    return matchesSearch && matchesCategory && matchesHasContent;
+  });
+
+  // Apply filters to content
+  const content = allContent.filter(item => {
+    const matchesSearch = item.title.toLowerCase().includes(contentFilters.search.toLowerCase());
+    const matchesCategory = !contentFilters.categoryId || (item as any).categoryId === contentFilters.categoryId;
+    const matchesTopic = !contentFilters.topicId || (item as any).topicId === contentFilters.topicId;
+    const matchesHasContent = !contentFilters.hasContent ||
+      (contentFilters.hasContent === 'yes' && item.content) ||
+      (contentFilters.hasContent === 'no' && !item.content);
+    
+    return matchesSearch && matchesCategory && matchesTopic && matchesHasContent;
+  });
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -284,6 +327,27 @@ const ContentManagement: React.FC = () => {
     return `${action} ${types[activeTab]}`;
   };
 
+  // Filter helper functions
+  const clearTopicFilters = () => {
+    setTopicFilters({
+      search: '',
+      categoryId: '',
+      hasContent: '',
+    });
+  };
+
+  const clearContentFilters = () => {
+    setContentFilters({
+      search: '',
+      categoryId: '',
+      topicId: '',
+      hasContent: '',
+    });
+  };
+
+  const hasActiveTopicFilters = topicFilters.search || topicFilters.categoryId || topicFilters.hasContent;
+  const hasActiveContentFilters = contentFilters.search || contentFilters.categoryId || contentFilters.topicId || contentFilters.hasContent;
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400 }}>
@@ -315,12 +379,12 @@ const ContentManagement: React.FC = () => {
             />
             <Tab 
               icon={<TopicIcon />} 
-              label={`Topics (${topics.length})`} 
+              label={`Topics (${topics.length}${hasActiveTopicFilters ? ` of ${allTopics.length}` : ''})`} 
               iconPosition="start"
             />
             <Tab 
               icon={<ContentIcon />} 
-              label={`Content (${content.length})`} 
+              label={`Content (${content.length}${hasActiveContentFilters ? ` of ${allContent.length}` : ''})`} 
               iconPosition="start"
             />
           </Tabs>
@@ -425,6 +489,77 @@ const ContentManagement: React.FC = () => {
               Create categories first before adding topics.
             </Alert>
           ) : (
+            <>
+              {/* Topics Filters */}
+              <Card variant="outlined" sx={{ mb: 3, p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <FilterIcon color="primary" />
+                  <Typography variant="subtitle1" fontWeight={600}>Filters</Typography>
+                  {hasActiveTopicFilters && (
+                    <Button
+                      size="small"
+                      startIcon={<ClearIcon />}
+                      onClick={clearTopicFilters}
+                      sx={{ ml: 'auto' }}
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Search topics..."
+                      value={topicFilters.search}
+                      onChange={(e) => setTopicFilters(prev => ({ ...prev, search: e.target.value }))}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        value={topicFilters.categoryId}
+                        onChange={(e) => setTopicFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+                        label="Category"
+                      >
+                        <MenuItem value="">All Categories</MenuItem>
+                        {categories.map((category) => (
+                          <MenuItem key={category.id} value={category.id}>
+                            {category.title}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Has Content</InputLabel>
+                      <Select
+                        value={topicFilters.hasContent}
+                        onChange={(e) => setTopicFilters(prev => ({ ...prev, hasContent: e.target.value }))}
+                        label="Has Content"
+                      >
+                        <MenuItem value="">All Topics</MenuItem>
+                        <MenuItem value="yes">Has Content Items</MenuItem>
+                        <MenuItem value="no">Empty Topics</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Card>
+            </>
+          )}
+
+          {categories.length > 0 && (
             <TableContainer component={Paper} variant="outlined">
               <Table>
                 <TableHead>
@@ -476,7 +611,9 @@ const ContentManagement: React.FC = () => {
                   {topics.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} align="center">
-                        <Typography color="text.secondary">No topics yet. Create your first topic!</Typography>
+                        <Typography color="text.secondary">
+                          {hasActiveTopicFilters ? 'No topics match your filters.' : 'No topics yet. Create your first topic!'}
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   )}
@@ -494,17 +631,110 @@ const ContentManagement: React.FC = () => {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => handleCreate('content')}
-              disabled={topics.length === 0}
+              disabled={allTopics.length === 0}
             >
               Add Content
             </Button>
           </Box>
 
-          {topics.length === 0 ? (
+          {allTopics.length === 0 ? (
             <Alert severity="info">
               Create categories and topics first before adding content.
             </Alert>
           ) : (
+            <>
+              {/* Content Filters */}
+              <Card variant="outlined" sx={{ mb: 3, p: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <FilterIcon color="primary" />
+                  <Typography variant="subtitle1" fontWeight={600}>Filters</Typography>
+                  {hasActiveContentFilters && (
+                    <Button
+                      size="small"
+                      startIcon={<ClearIcon />}
+                      onClick={clearContentFilters}
+                      sx={{ ml: 'auto' }}
+                    >
+                      Clear All
+                    </Button>
+                  )}
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={3}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Search content..."
+                      value={contentFilters.search}
+                      onChange={(e) => setContentFilters(prev => ({ ...prev, search: e.target.value }))}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        value={contentFilters.categoryId}
+                        onChange={(e) => {
+                          setContentFilters(prev => ({ ...prev, categoryId: e.target.value, topicId: '' }));
+                        }}
+                        label="Category"
+                      >
+                        <MenuItem value="">All Categories</MenuItem>
+                        {categories.map((category) => (
+                          <MenuItem key={category.id} value={category.id}>
+                            {category.title}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Topic</InputLabel>
+                      <Select
+                        value={contentFilters.topicId}
+                        onChange={(e) => setContentFilters(prev => ({ ...prev, topicId: e.target.value }))}
+                        label="Topic"
+                        disabled={!contentFilters.categoryId}
+                      >
+                        <MenuItem value="">All Topics</MenuItem>
+                        {allTopics
+                          .filter(topic => !contentFilters.categoryId || (topic as any).categoryId === contentFilters.categoryId)
+                          .map((topic) => (
+                            <MenuItem key={topic.id} value={topic.id}>
+                              {topic.title}
+                            </MenuItem>
+                          ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Has Content</InputLabel>
+                      <Select
+                        value={contentFilters.hasContent}
+                        onChange={(e) => setContentFilters(prev => ({ ...prev, hasContent: e.target.value }))}
+                        label="Has Content"
+                      >
+                        <MenuItem value="">All Items</MenuItem>
+                        <MenuItem value="yes">Has Content</MenuItem>
+                        <MenuItem value="no">Empty Items</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Card>
+            </>
+          )}
+
+          {allTopics.length > 0 && (
             <TableContainer component={Paper} variant="outlined">
               <Table>
                 <TableHead>
@@ -559,7 +789,9 @@ const ContentManagement: React.FC = () => {
                   {content.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} align="center">
-                        <Typography color="text.secondary">No content yet. Create your first content item!</Typography>
+                        <Typography color="text.secondary">
+                          {hasActiveContentFilters ? 'No content matches your filters.' : 'No content yet. Create your first content item!'}
+                        </Typography>
                       </TableCell>
                     </TableRow>
                   )}
@@ -679,7 +911,7 @@ const ContentManagement: React.FC = () => {
                     label="Topic"
                     disabled={!formData.categoryId}
                   >
-                    {topics
+                    {allTopics
                       .filter(topic => (topic as any).categoryId === formData.categoryId)
                       .map((topic) => (
                         <MenuItem key={topic.id} value={topic.id}>
