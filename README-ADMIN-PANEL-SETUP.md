@@ -10,8 +10,9 @@
 7. [App Customization](#app-customization)
 8. [Authentication Control](#authentication-control)
 9. [Color Customization](#color-customization)
-10. [Integration with Android App](#integration-with-android-app)
-11. [Troubleshooting](#troubleshooting)
+10. [AdMob Settings](#admob-settings)
+11. [Integration with Android App](#integration-with-android-app)
+12. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -322,6 +323,74 @@ Navigate to **App Settings → Bottom Navigation Colors**:
 
 ---
 
+## 💰 AdMob Settings
+
+### Complete Advertisement Control
+Navigate to **Ads Settings** in the sidebar for comprehensive ad management:
+
+#### Master Controls
+- 🎛️ **Enable Advertisements**: Global on/off switch for all ads
+- 🚫 **Ad-Free Mode**: Temporarily disable ads for testing or premium users
+- 📊 **Status Indicators**: Visual feedback showing current ad state
+
+#### Native Ads (Recommended)
+- ✅ **Enable/Disable**: Toggle native ads on/off
+- 📱 **Frequency Control**: Show ads every 2nd, 3rd, 4th, or 5th item
+- 🏠 **Home Page Placement**: Control native ads on home screen
+- 🎯 **Best User Experience**: Ads blend seamlessly with content
+
+#### Rewarded Ads (User Choice)
+- 🎁 **Enable/Disable**: Toggle rewarded ads
+- 📝 **Button Text**: Customize the rewarded ad button text
+- 🏆 **Reward Description**: Describe what users get
+- ⏰ **Duration Control**: Set ad-free hours (1-48 hours)
+- 😊 **Highest Satisfaction**: Users choose to watch ads
+
+#### Banner Ads (Consistent Revenue)
+- 🔲 **Enable/Disable**: Toggle banner ads
+- 📍 **Position Control**: Top or bottom of screen
+- 📏 **Size Options**: Standard, Large, or Smart banners
+- 💰 **Continuous Revenue**: Always-visible ad space
+
+#### Interstitial Ads (Use Carefully)
+- ⚠️ **Enable/Disable**: Toggle full-screen ads with warnings
+- 🔄 **Frequency Control**: Show every 3-10 actions
+- ⏱️ **Cooldown Periods**: 2-10 minute delays between ads
+- 🎯 **High Revenue**: But can impact user experience
+
+#### Advanced Controls
+**Frequency & Limits:**
+- ⏰ **First Ad Delay**: Wait before showing first ad (0-10 minutes)
+- 📊 **Hourly Limits**: Maximum ads per hour (2-8 ads)
+- 🎯 **Session Limits**: Maximum ads per session (5-20 ads)
+
+**Content Filtering:**
+- 👶 **Child-Safe Only**: Family-friendly advertisements only
+- 🎮 **Block Gaming Ads**: Prevent gaming ads in educational apps
+- 🛡️ **Content Safety**: Maintain appropriate ad content
+
+**Development & Testing:**
+- 🧪 **Test Mode**: Use test ads during development
+- 💡 **Revenue Tips**: Built-in optimization guidance
+- ⚠️ **Production Warnings**: Reminders for live deployment
+
+### AdMob Integration Benefits:
+- **Instant Updates**: Changes apply immediately without app updates
+- **Revenue Optimization**: Built-in best practices and warnings
+- **User Experience**: Balanced monetization with user satisfaction
+- **Professional Interface**: Color-coded status and clear controls
+- **Safety First**: Child-safe filtering and content controls
+
+### Revenue Optimization Tips:
+1. **Start Conservative**: Begin with Native + Rewarded ads only
+2. **Monitor Metrics**: Watch user retention when adding more ads
+3. **Respect Users**: Use interstitial ads sparingly
+4. **Test Thoroughly**: Always test ad placements before going live
+5. **Child Safety**: Keep family-friendly filtering enabled
+6. **Progressive Enhancement**: Add ad types gradually based on performance
+
+---
+
 ## 📱 Integration with Android App
 
 ### Firestore Data Structure
@@ -342,12 +411,24 @@ The admin panel creates this structure in Firestore:
 │                   └── content: "<html>...</html>"
 
 📁 app_settings/
-└── 📄 general/
-    ├── authEnabled: false
-    ├── appName: "LearningApp"
-    ├── bottomNavHomeColor: "#3B82F6"
-    ├── bottomNavHeartColor: "#EF4444"
-    └── ... (all other settings)
+├── 📄 general/
+│   ├── authEnabled: false
+│   ├── appName: "LearningApp"
+│   ├── bottomNavHomeColor: "#3B82F6"
+│   ├── bottomNavHeartColor: "#EF4444"
+│   └── ... (all other settings)
+└── 📄 ads/
+    ├── adsEnabled: true
+    ├── adFreeMode: false
+    ├── nativeAdsEnabled: true
+    ├── nativeAdFrequency: 3
+    ├── rewardedAdsEnabled: true
+    ├── rewardedAdButton: "Remove Ads for 24h"
+    ├── bannerAdsEnabled: true
+    ├── bannerAdPosition: "bottom"
+    ├── interstitialAdsEnabled: false
+    ├── childSafeAdsOnly: true
+    └── ... (all ad settings)
 ```
 
 ### Android App Integration Steps:
@@ -389,9 +470,28 @@ db.collection("app_settings")
     }
 ```
 
-#### 3. Real-time Updates
+#### 3. Reading AdMob Settings
 ```kotlin
-// Listen for real-time updates
+// Read ad settings
+db.collection("app_settings")
+    .document("ads")
+    .get()
+    .addOnSuccessListener { document ->
+        val adSettings = document.toObject(AdSettings::class.java)
+        
+        // Apply ad configuration
+        val adsEnabled = adSettings?.adsEnabled ?: true
+        val nativeAdsEnabled = adSettings?.nativeAdsEnabled ?: true
+        val adFrequency = adSettings?.nativeAdFrequency ?: 3
+        
+        // Configure AdMob based on settings
+        configureAdMob(adSettings)
+    }
+```
+
+#### 4. Real-time Updates
+```kotlin
+// Listen for real-time updates - General Settings
 db.collection("app_settings")
     .document("general")
     .addSnapshotListener { snapshot, e ->
@@ -401,6 +501,19 @@ db.collection("app_settings")
             val settings = snapshot.toObject(AppSettings::class.java)
             // Apply new settings immediately
             applyNewSettings(settings)
+        }
+    }
+
+// Listen for real-time updates - Ad Settings
+db.collection("app_settings")
+    .document("ads")
+    .addSnapshotListener { snapshot, e ->
+        if (e != null) return@addSnapshotListener
+        
+        if (snapshot != null && snapshot.exists()) {
+            val adSettings = snapshot.toObject(AdSettings::class.java)
+            // Apply new ad settings immediately
+            updateAdConfiguration(adSettings)
         }
     }
 ```
@@ -434,6 +547,45 @@ data class Content(
     val title: String = "",
     val content: String = "",
     val type: String = "text"
+)
+
+data class AdSettings(
+    // Global Ad Controls
+    val adsEnabled: Boolean = true,
+    val adFreeMode: Boolean = false,
+    
+    // Native Ads
+    val nativeAdsEnabled: Boolean = true,
+    val nativeAdFrequency: Int = 3,
+    val nativeAdsOnHomePage: Boolean = true,
+    
+    // Rewarded Ads
+    val rewardedAdsEnabled: Boolean = true,
+    val rewardedAdButton: String = "Remove Ads for 24h",
+    val rewardedAdReward: String = "24 hours ad-free",
+    val rewardedAdValue: Int = 24,
+    
+    // Banner Ads
+    val bannerAdsEnabled: Boolean = true,
+    val bannerAdPosition: String = "bottom",
+    val bannerAdSize: String = "standard",
+    
+    // Interstitial Ads
+    val interstitialAdsEnabled: Boolean = false,
+    val interstitialFrequency: Int = 5,
+    val interstitialCooldown: Int = 180,
+    
+    // Ad Timing & Frequency
+    val firstAdDelay: Int = 300,
+    val maxAdsPerSession: Int = 8,
+    val maxAdsPerHour: Int = 3,
+    
+    // Content Filtering
+    val childSafeAdsOnly: Boolean = true,
+    val blockGameAds: Boolean = true,
+    
+    // Testing
+    val testAdsEnabled: Boolean = false
 )
 ```
 
