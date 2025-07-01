@@ -40,6 +40,13 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 interface AdSettings {
+  // AdMob Account & Ad Units
+  admobAppId: string;
+  bannerAdUnitId: string;
+  interstitialAdUnitId: string;
+  rewardedAdUnitId: string;
+  nativeAdUnitId: string;
+  
   // Global Ad Controls
   adsEnabled: boolean;
   adFreeMode: boolean;
@@ -81,6 +88,13 @@ interface AdSettings {
 }
 
 const defaultAdSettings: AdSettings = {
+  // AdMob Account & Ad Units (Test IDs)
+  admobAppId: 'ca-app-pub-3940256099942544~3347511713',
+  bannerAdUnitId: 'ca-app-pub-3940256099942544/6300978111',
+  interstitialAdUnitId: 'ca-app-pub-3940256099942544/1033173712',
+  rewardedAdUnitId: 'ca-app-pub-3940256099942544/5224354917',
+  nativeAdUnitId: 'ca-app-pub-3940256099942544/2247696110',
+  
   // Global Ad Controls
   adsEnabled: true,
   adFreeMode: false,
@@ -269,6 +283,119 @@ const AdSettings: React.FC = () => {
       )}
 
       <Grid container spacing={3}>
+        {/* AdMob Account & Ad Units */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <Box sx={{ 
+                  width: 24, 
+                  height: 24, 
+                  backgroundColor: '#4285F4', 
+                  borderRadius: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
+                  G
+                </Box>
+                <Typography variant="h6" fontWeight={600}>
+                  AdMob Account & Ad Units
+                </Typography>
+                <Chip 
+                  label="Required" 
+                  color="error" 
+                  size="small" 
+                  variant="outlined" 
+                />
+              </Box>
+              
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>⚠️ Important:</strong> After changing App ID, you must rebuild and reinstall the app. 
+                  Ad Unit IDs can be changed instantly without app rebuild. Get these from your AdMob console.
+                </Typography>
+              </Alert>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="📱 AdMob App ID (Requires App Rebuild)"
+                    value={settings.admobAppId}
+                    onChange={handleInputChange('admobAppId')}
+                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx~xxxxxxxxxx"
+                    helperText="Get this from AdMob console → Apps → App settings"
+                    InputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                    sx={{ mb: 2 }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="🎯 Banner Ad Unit ID"
+                    value={settings.bannerAdUnitId}
+                    onChange={handleInputChange('bannerAdUnitId')}
+                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                    helperText="AdMob → Ad units → Banner → Ad unit ID"
+                    InputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="🎪 Interstitial Ad Unit ID"
+                    value={settings.interstitialAdUnitId}
+                    onChange={handleInputChange('interstitialAdUnitId')}
+                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                    helperText="AdMob → Ad units → Interstitial → Ad unit ID"
+                    InputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="🎁 Rewarded Ad Unit ID"
+                    value={settings.rewardedAdUnitId}
+                    onChange={handleInputChange('rewardedAdUnitId')}
+                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                    helperText="AdMob → Ad units → Rewarded → Ad unit ID"
+                    InputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="📄 Native Ad Unit ID"
+                    value={settings.nativeAdUnitId}
+                    onChange={handleInputChange('nativeAdUnitId')}
+                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                    helperText="AdMob → Ad units → Native → Ad unit ID"
+                    InputProps={{
+                      style: { fontFamily: 'monospace', fontSize: '0.875rem' }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* Master Controls */}
         <Grid item xs={12}>
           <Card sx={{ border: '2px solid', borderColor: settings.adsEnabled ? 'success.main' : 'error.main' }}>
@@ -824,22 +951,172 @@ const AdSettings: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Revenue Tips */}
+        {/* Revenue Analytics & Optimization */}
         <Grid item xs={12}>
-          <Alert severity="info" sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <RevenueIcon />
-              💡 Revenue Optimization Tips
-            </Typography>
-            <Typography variant="body2" component="div">
-              <Box component="ul" sx={{ pl: 2, mb: 0 }}>
-                <li>Start with <strong>Native + Rewarded ads</strong> for best user experience</li>
-                <li>Enable <strong>Banner ads</strong> for consistent revenue stream</li>
-                <li>Use <strong>Interstitial ads sparingly</strong> to avoid user frustration</li>
-                <li>Monitor <strong>user retention</strong> when adjusting ad frequency</li>
-                <li>Enable <strong>Test Mode</strong> during development, disable for production</li>
-                <li>Keep <strong>Child-Safe filtering</strong> enabled for educational content</li>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <RevenueIcon color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  💰 Revenue Analytics & Optimization
+                </Typography>
+                <Chip 
+                  label="Revenue Guide" 
+                  color="success" 
+                  size="small" 
+                  variant="outlined" 
+                />
               </Box>
+
+              {/* Expected Revenue by Ad Type */}
+              <Alert severity="success" sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                  📊 Expected Revenue (per 1000 daily active users)
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'success.light', borderRadius: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'success.dark' }}>$3-8/day</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>🎁 Rewarded Ads</Typography>
+                      <Typography variant="caption">Highest eCPM, Zero frustration</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'info.light', borderRadius: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'info.dark' }}>$2-5/day</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>📄 Native Ads</Typography>
+                      <Typography variant="caption">Seamless, High satisfaction</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'warning.light', borderRadius: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'warning.dark' }}>$0.50-2/day</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>📊 Banner Ads</Typography>
+                      <Typography variant="caption">Consistent baseline</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Box sx={{ textAlign: 'center', p: 2, backgroundColor: 'error.light', borderRadius: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: 'error.dark' }}>$1-6/day</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>🎯 Interstitial</Typography>
+                      <Typography variant="caption">High revenue, Use carefully</Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+                <Typography variant="h5" sx={{ fontWeight: 700, textAlign: 'center', mt: 2, color: 'success.dark' }}>
+                  💰 Total Revenue Potential: $6.50-21/day per 1000 users
+                </Typography>
+              </Alert>
+
+              {/* Configuration Examples */}
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                🎯 Live Configuration Examples
+              </Typography>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Alert severity="info" sx={{ p: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'info.dark' }}>
+                      🚀 Conservative Setup (New Apps)
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, mb: 0 }}>
+                      <li>✅ Native Ads: Every 4th item</li>
+                      <li>✅ Rewarded Ads: 24h ad-free reward</li>
+                      <li>✅ Banner Ads: Bottom position</li>
+                      <li>❌ Interstitial Ads: Disabled initially</li>
+                      <li>⏰ First Ad Delay: 5 minutes</li>
+                      <li>📊 Max 3 ads per hour, 8 per session</li>
+                      <li>🛡️ Child-safe filtering enabled</li>
+                    </Box>
+                  </Alert>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Alert severity="warning" sx={{ p: 3 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'warning.dark' }}>
+                      💰 Optimized Setup (Established Apps)
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2, mb: 0 }}>
+                      <li>✅ Native Ads: Every 3rd item</li>
+                      <li>✅ Rewarded Ads: 12h ad-free reward</li>
+                      <li>✅ Banner Ads: Bottom position</li>
+                      <li>✅ Interstitial: Every 5 actions, 3min cooldown</li>
+                      <li>⏰ First Ad Delay: 1 minute</li>
+                      <li>📊 Max 5 ads per hour, 12 per session</li>
+                      <li>🛡️ Child-safe filtering enabled</li>
+                    </Box>
+                  </Alert>
+                </Grid>
+              </Grid>
+
+              {/* Optimization Tips */}
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, mt: 3 }}>
+                💡 Revenue Optimization Strategy
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={4}>
+                  <Alert severity="success" sx={{ p: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Phase 1: Start Conservative</Typography>
+                    <Typography variant="body2">
+                      • Enable Native + Rewarded ads<br/>
+                      • Enable child-safe filtering<br/>
+                      • Keep interstitials disabled
+                    </Typography>
+                  </Alert>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Alert severity="info" sx={{ p: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Phase 2: Add Consistency</Typography>
+                    <Typography variant="body2">
+                      • Enable banner ads (bottom)<br/>
+                      • Monitor user retention<br/>
+                      • Adjust frequency based on feedback
+                    </Typography>
+                  </Alert>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Alert severity="warning" sx={{ p: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>Phase 3: Optimize Carefully</Typography>
+                    <Typography variant="body2">
+                      • Consider interstitial ads sparingly<br/>
+                      • Monitor user satisfaction metrics<br/>
+                      • Optimize revenue vs retention balance
+                    </Typography>
+                  </Alert>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Why This System Is Revolutionary */}
+        <Grid item xs={12}>
+          <Alert severity="success" sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              🚀 Why This System Is Revolutionary
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" component="div">
+                  <Box component="ul" sx={{ pl: 2, mb: 0 }}>
+                    <li><strong>✅ NO CODING REQUIRED</strong> - Change everything from admin panel</li>
+                    <li><strong>✅ INSTANT UPDATES</strong> - All changes apply immediately</li>
+                    <li><strong>✅ REVENUE OPTIMIZATION</strong> - Built-in best practices</li>
+                  </Box>
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="body2" component="div">
+                  <Box component="ul" sx={{ pl: 2, mb: 0 }}>
+                    <li><strong>✅ USER EXPERIENCE PROTECTION</strong> - Smart limits and filtering</li>
+                    <li><strong>✅ TESTING MADE EASY</strong> - One-click test/production toggle</li>
+                    <li><strong>✅ EDUCATIONAL FOCUS</strong> - Content filtering for appropriate ads</li>
+                  </Box>
+                </Typography>
+              </Grid>
+            </Grid>
+            <Typography variant="h6" sx={{ fontWeight: 700, textAlign: 'center', mt: 2, color: 'success.dark' }}>
+              🎉 Perfect for CodeCanyon Buyers - Most Advanced Dynamic AdMob System Available!
             </Typography>
           </Alert>
         </Grid>
