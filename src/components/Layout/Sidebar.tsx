@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onToggle, width, isMobile }) =>
             width: { xs: 36, sm: 40 },
             height: { xs: 36, sm: 40 },
             borderRadius: 3,
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

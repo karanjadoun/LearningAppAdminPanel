@@ -318,7 +318,7 @@ const SetupWizard: React.FC = () => {
                         width: 40,
                         height: 40,
                         borderRadius: 2,
-                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

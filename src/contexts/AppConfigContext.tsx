@@ -18,7 +18,7 @@ const defaultConfig: AppConfig = {
   appName: 'LearningApp',
   appTitle: 'Admin Panel',
   appDescription: 'Manage your content and configurations',
-  primaryColor: '#6366f1',
+  primaryColor: '#3B82F6',
   logoText: 'LA',
 };
 

@@ -57,6 +57,13 @@ interface AppSettings {
   promoCardTitle: string;
   promoCardSubtitle: string;
   
+  // Bottom Navigation Colors
+  bottomNavHomeColor: string;
+  bottomNavHeartColor: string;
+  bottomNavGridColor: string;
+  bottomNavSettingsColor: string;
+  bottomNavUnselectedColor: string;
+  
   // Search Settings
   searchPlaceholder1: string;
   searchPlaceholder2: string;
@@ -95,6 +102,13 @@ const defaultSettings: AppSettings = {
   // Promo Card
   promoCardTitle: 'Study App',
   promoCardSubtitle: 'Every Books Solutions\nAvailable for Free',
+  
+  // Bottom Navigation Colors
+  bottomNavHomeColor: '#3B82F6',     // Modern Blue
+  bottomNavHeartColor: '#EF4444',    // Modern Red
+  bottomNavGridColor: '#F59E0B',     // Modern Amber
+  bottomNavSettingsColor: '#8B5CF6', // Modern Purple
+  bottomNavUnselectedColor: '#9CA3AF', // Gray
   
   // Search Settings
   searchPlaceholder1: 'Search Mathematics...',
@@ -457,6 +471,341 @@ const AppSettings: React.FC = () => {
                     rows={2}
                     helperText="Subtitle text. Use \n for line breaks"
                   />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Bottom Navigation Colors */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    background: 'linear-gradient(45deg, #3B82F6, #EF4444, #F59E0B, #8B5CF6)', 
+                    borderRadius: 1 
+                  }} />
+                </Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Bottom Navigation Colors
+                </Typography>
+              </Box>
+              
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  Customize the colors of your app's bottom navigation icons. Changes will be applied instantly in the mobile app.
+                </Typography>
+              </Alert>
+              
+              <Grid container spacing={3}>
+                {/* Home Icon Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      🏠 Home Icon Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.bottomNavHomeColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavHomeColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.bottomNavHomeColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavHomeColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.bottomNavHomeColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Heart Icon Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      ❤️ Favorites Icon Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.bottomNavHeartColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavHeartColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.bottomNavHeartColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavHeartColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.bottomNavHeartColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Grid Icon Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      📊 Categories Icon Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.bottomNavGridColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavGridColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.bottomNavGridColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavGridColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.bottomNavGridColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Settings Icon Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      ⚙️ Settings Icon Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.bottomNavSettingsColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavSettingsColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.bottomNavSettingsColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavSettingsColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.bottomNavSettingsColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Unselected Icon Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      ⚪ Unselected Icons Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.bottomNavUnselectedColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavUnselectedColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.bottomNavUnselectedColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bottomNavUnselectedColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.bottomNavUnselectedColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Bottom Navigation Preview */}
+                <Grid item xs={12}>
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                      Live Preview:
+                    </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center',
+                      p: 3,
+                      backgroundColor: '#F9FAFB',
+                      borderRadius: 2,
+                      border: '1px solid #E5E7EB'
+                    }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 6,
+                        backgroundColor: 'white',
+                        p: 2,
+                        borderRadius: 2,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        border: '1px solid #E5E7EB'
+                      }}>
+                        {/* Home Icon */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ 
+                            width: 24, 
+                            height: 24, 
+                            backgroundColor: settings.bottomNavHomeColor,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '14px'
+                          }}>
+                            🏠
+                          </Box>
+                          <Box sx={{ 
+                            width: 20, 
+                            height: 2, 
+                            backgroundColor: settings.bottomNavHomeColor,
+                            borderRadius: 1
+                          }} />
+                        </Box>
+
+                        {/* Heart Icon */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ 
+                            width: 24, 
+                            height: 24, 
+                            backgroundColor: settings.bottomNavUnselectedColor,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '14px'
+                          }}>
+                            ❤️
+                          </Box>
+                        </Box>
+
+                        {/* Grid Icon */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ 
+                            width: 24, 
+                            height: 24, 
+                            backgroundColor: settings.bottomNavUnselectedColor,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '14px'
+                          }}>
+                            📊
+                          </Box>
+                        </Box>
+
+                        {/* Settings Icon */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                          <Box sx={{ 
+                            width: 24, 
+                            height: 24, 
+                            backgroundColor: settings.bottomNavUnselectedColor,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontSize: '14px'
+                          }}>
+                            ⚙️
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                      Preview shows the Home tab selected (with underline). Other tabs use the unselected color.
+                    </Typography>
+                  </Box>
                 </Grid>
               </Grid>
             </CardContent>

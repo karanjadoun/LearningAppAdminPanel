@@ -34,7 +34,7 @@ const LoginPage: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundColor: '#F8FAFC',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -46,14 +46,15 @@ const LoginPage: React.FC = () => {
           sx={{ 
             maxWidth: 480,
             margin: '0 auto',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
-            borderRadius: 4,
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            borderRadius: 3,
             overflow: 'hidden',
+            border: '1px solid #F3F4F6',
           }}
         >
           <Box
             sx={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
               p: 4,
               textAlign: 'center',
               color: 'white',
@@ -64,13 +65,13 @@ const LoginPage: React.FC = () => {
                 width: 64,
                 height: 64,
                 borderRadius: 3,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 mx: 'auto',
                 mb: 2,
-                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
               }}
             >
               <SchoolIcon sx={{ fontSize: 32, color: 'white' }} />
@@ -143,11 +144,11 @@ const LoginPage: React.FC = () => {
                 fontWeight: 600,
                 textTransform: 'none',
                 borderRadius: 2,
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                background: 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
                   transform: 'translateY(-1px)',
-                  boxShadow: '0 8px 25px rgba(99, 102, 241, 0.3)',
+                  boxShadow: '0 8px 25px rgba(59, 130, 246, 0.3)',
                 },
                 '&:disabled': {
                   background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
