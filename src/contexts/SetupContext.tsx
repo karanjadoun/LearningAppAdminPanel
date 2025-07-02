@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { Box, CircularProgress, Typography } from '@mui/material';
 
 interface FirebaseConfig {
   apiKey: string;
@@ -45,40 +48,115 @@ interface SetupProviderProps {
 }
 
 export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
-  const [setupState, setSetupState] = useState<SetupState>(() => {
-    try {
-      const savedSetup = localStorage.getItem('adminPanelSetup');
-      if (savedSetup) {
-        const parsed = JSON.parse(savedSetup);
-        return { ...defaultSetupState, ...parsed };
-      }
-    } catch (error) {
-      console.error('Error loading setup state:', error);
-    }
-    return defaultSetupState;
-  });
+  const [setupState, setSetupState] = useState<SetupState>(defaultSetupState);
+  const [loading, setLoading] = useState(true);
 
-  // Save setup state to localStorage whenever it changes
+  // Load setup state from both localStorage and Firebase
   useEffect(() => {
-    localStorage.setItem('adminPanelSetup', JSON.stringify(setupState));
-  }, [setupState]);
+    const loadSetupState = async () => {
+      try {
+        // First, try to load Firebase config from localStorage
+        const savedFirebaseConfig = localStorage.getItem('firebaseConfig');
+        if (savedFirebaseConfig) {
+          const firebaseConfig = JSON.parse(savedFirebaseConfig);
+          
+          // Initialize Firebase with the saved config
+          try {
+            const app = initializeApp(firebaseConfig, 'setup-check-app');
+            const db = getFirestore(app);
+            
+            // Check setup status in Firebase
+            const setupDoc = await getDoc(doc(db, 'admin_setup', 'status'));
+            if (setupDoc.exists()) {
+              const firestoreSetupData = setupDoc.data();
+              setSetupState({
+                ...defaultSetupState,
+                isSetupComplete: firestoreSetupData.isSetupComplete || false,
+                isFirstTime: !firestoreSetupData.isSetupComplete,
+                firebaseConfig,
+              });
+            } else {
+              // Firebase config exists but no setup doc - partial setup
+              setSetupState({
+                ...defaultSetupState,
+                firebaseConfig,
+              });
+            }
+          } catch (firebaseError) {
+            console.error('Firebase initialization failed:', firebaseError);
+            // Fall back to localStorage only
+            const savedSetup = localStorage.getItem('adminPanelSetup');
+            if (savedSetup) {
+              const parsed = JSON.parse(savedSetup);
+              setSetupState({ ...defaultSetupState, ...parsed });
+            }
+          }
+        } else {
+          // No Firebase config, check localStorage for partial setup
+          const savedSetup = localStorage.getItem('adminPanelSetup');
+          if (savedSetup) {
+            const parsed = JSON.parse(savedSetup);
+            setSetupState({ ...defaultSetupState, ...parsed });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading setup state:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSetupState();
+  }, []);
+
+  // Save setup state to localStorage for current session
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem('adminPanelSetup', JSON.stringify(setupState));
+    }
+  }, [setupState, loading]);
 
   const updateSetupState = (updates: Partial<SetupState>) => {
     setSetupState(prev => ({ ...prev, ...updates }));
   };
 
-  const completeSetup = () => {
-    setSetupState(prev => ({
-      ...prev,
-      isSetupComplete: true,
-      isFirstTime: false,
-    }));
+  const completeSetup = async () => {
+    try {
+      const updatedState = {
+        ...setupState,
+        isSetupComplete: true,
+        isFirstTime: false,
+      };
+      
+      setSetupState(updatedState);
+
+      // Save completion status to Firebase if config is available
+      if (setupState.firebaseConfig) {
+        try {
+          const app = initializeApp(setupState.firebaseConfig, 'setup-complete-app');
+          const db = getFirestore(app);
+          
+          await setDoc(doc(db, 'admin_setup', 'status'), {
+            isSetupComplete: true,
+            completedAt: new Date().toISOString(),
+            version: '1.0.0'
+          });
+          
+          console.log('Setup completion saved to Firebase');
+        } catch (firebaseError) {
+          console.error('Failed to save setup status to Firebase:', firebaseError);
+        }
+      }
+    } catch (error) {
+      console.error('Error completing setup:', error);
+    }
   };
 
   const resetSetup = () => {
     setSetupState(defaultSetupState);
     localStorage.removeItem('adminPanelSetup');
     localStorage.removeItem('appConfig');
+    localStorage.removeItem('firebaseConfig');
   };
 
   const saveFirebaseConfig = (config: FirebaseConfig) => {
@@ -104,15 +182,60 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
         throw new Error('Missing required Firebase configuration fields');
       }
 
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      return true;
+      // Test actual Firebase connection
+      try {
+        const app = initializeApp(config, 'test-app');
+        const db = getFirestore(app);
+        
+        // Try to read a test document to verify connection
+        await getDoc(doc(db, 'test', 'connection'));
+        
+        // If we get here, connection is working
+        return true;
+      } catch (connectionError) {
+        console.error('Firebase connection test failed:', connectionError);
+        return false;
+      }
     } catch (error) {
       console.error('Firebase connection test failed:', error);
       return false;
     }
   };
+
+  // Don't render children until setup state is loaded
+  if (loading) {
+    return (
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '100vh',
+          backgroundColor: '#F8FAFC',
+        }}
+      >
+        <CircularProgress 
+          size={48} 
+          thickness={4}
+          sx={{
+            color: '#3B82F6',
+          }}
+        />
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            mt: 3,
+            color: '#374151',
+            fontWeight: 600,
+            textAlign: 'center',
+          }}
+        >
+          Checking setup status...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <SetupContext.Provider 
