@@ -384,11 +384,11 @@ const ContentManagement: React.FC = () => {
           data.iconUrl = null; // Clear URL
         }
 
-        if (activeTab === 0) {
+        if (editingItemType === 'category') {
           // Creating category
           await contentService.createRootCategory(data);
           showSnackbar('Category created successfully', 'success');
-        } else if (activeTab === 1) {
+        } else if (editingItemType === 'topic') {
           // Creating topic
           if (!formData.categoryId) {
             showSnackbar('Please select a category', 'error');
@@ -399,7 +399,7 @@ const ContentManagement: React.FC = () => {
             await contentService.createChild(category.id, data, [...(category.fullPath || []), 'children']);
             showSnackbar('Topic created successfully', 'success');
           }
-        } else if (activeTab === 2) {
+        } else if (editingItemType === 'content') {
           // Creating content
           if (!formData.categoryId || !formData.topicId) {
             showSnackbar('Please select both category and topic', 'error');
