@@ -166,6 +166,9 @@ const ContentManagement: React.FC = () => {
     topicId: '',
   });
 
+  // Track the type of item being edited (independent of active tab)
+  const [editingItemType, setEditingItemType] = useState<'category' | 'topic' | 'content' | null>(null);
+
   // Icon management states
   const [iconUrlPreview, setIconUrlPreview] = useState<string | null>(null);
   const [iconUrlError, setIconUrlError] = useState<string | null>(null);
@@ -284,6 +287,7 @@ const ContentManagement: React.FC = () => {
   const handleCreate = (type: 'category' | 'topic' | 'content') => {
     setEditMode('create');
     setSelectedItem(null);
+    setEditingItemType(type);
     setFormData({
       title: '',
       content: '',
@@ -302,9 +306,19 @@ const ContentManagement: React.FC = () => {
   };
 
   // Handle edit item
-  const handleEdit = (item: ContentNode) => {
+  const handleEdit = (item: ContentNode, itemType?: 'category' | 'topic' | 'content') => {
     setEditMode('edit');
     setSelectedItem(item);
+    
+    // Determine item type if not provided
+    let detectedType: 'category' | 'topic' | 'content' = itemType || 'category';
+    if (!itemType) {
+      // Auto-detect based on current active tab as fallback
+      if (activeTab === 0) detectedType = 'category';
+      else if (activeTab === 1) detectedType = 'topic';
+      else if (activeTab === 2) detectedType = 'content';
+    }
+    setEditingItemType(detectedType);
     
     // Determine icon type and set appropriate fields
     const hasIconUrl = (item as any).iconUrl;
@@ -350,7 +364,7 @@ const ContentManagement: React.FC = () => {
         };
 
         // Only add colorHex for categories and topics, not content
-        if (activeTab === 0 || activeTab === 1) {
+        if (editingItemType === 'category' || editingItemType === 'topic') {
           data.colorHex = formData.colorHex;
         }
 
@@ -406,7 +420,7 @@ const ContentManagement: React.FC = () => {
           };
 
           // Only add colorHex for categories and topics, not content
-          if (activeTab === 0 || activeTab === 1) {
+          if (editingItemType === 'category' || editingItemType === 'topic') {
             data.colorHex = formData.colorHex;
           }
 
@@ -432,6 +446,7 @@ const ContentManagement: React.FC = () => {
       }
 
       setDialogOpen(false);
+      setEditingItemType(null);
       refreshData();
     } catch (error) {
       console.error('Error saving:', error);
@@ -466,9 +481,14 @@ const ContentManagement: React.FC = () => {
   };
 
   const getDialogTitle = () => {
-    const types = ['Category', 'Topic', 'Content'];
+    const typeMap = {
+      'category': 'Category',
+      'topic': 'Topic',
+      'content': 'Content'
+    };
     const action = editMode === 'create' ? 'Create' : 'Edit';
-    return `${action} ${types[activeTab]}`;
+    const type = editingItemType ? typeMap[editingItemType] : 'Item';
+    return `${action} ${type}`;
   };
 
   // Filter helper functions
@@ -1013,7 +1033,12 @@ const ContentManagement: React.FC = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItemComponent onClick={() => { handleEdit(selectedItem!); handleMenuClose(); }}>
+        <MenuItemComponent onClick={() => { 
+          // Determine item type based on active tab when edit is triggered
+          const itemType = activeTab === 0 ? 'category' : activeTab === 1 ? 'topic' : 'content';
+          handleEdit(selectedItem!, itemType); 
+          handleMenuClose(); 
+        }}>
           <EditIcon sx={{ mr: 1 }} /> Edit
         </MenuItemComponent>
         <MenuItemComponent 
@@ -1037,7 +1062,7 @@ const ContentManagement: React.FC = () => {
               required
             />
 
-            {(activeTab === 0 || activeTab === 1 || activeTab === 2) && (
+            {(editingItemType === 'category' || editingItemType === 'topic' || editingItemType === 'content') && (
               <Card variant="outlined" sx={{ p: 3, backgroundColor: 'grey.50' }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <ImageIcon />
@@ -1124,7 +1149,7 @@ const ContentManagement: React.FC = () => {
                       <MenuItem value="ic_medicine">⚕️ Medicine</MenuItem>
                       <MenuItem value="ic_law">⚖️ Law</MenuItem>
                       {/* Content-specific Icons */}
-                      {activeTab === 2 && (
+                      {editingItemType === 'content' && (
                         <>
                           <MenuItem value="ic_lesson">📖 Lesson</MenuItem>
                           <MenuItem value="ic_experiment">🧪 Experiment</MenuItem>
@@ -1231,7 +1256,7 @@ const ContentManagement: React.FC = () => {
                         </Avatar>
                         <Box>
                           <Typography variant="body1" fontWeight={600}>
-                            {formData.title || (activeTab === 0 ? 'Category Title' : activeTab === 1 ? 'Topic Title' : 'Content Title')}
+                            {formData.title || (editingItemType === 'category' ? 'Category Title' : editingItemType === 'topic' ? 'Topic Title' : 'Content Title')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             Predefined: {formData.icon}
@@ -1264,7 +1289,7 @@ const ContentManagement: React.FC = () => {
                         </Avatar>
                         <Box>
                           <Typography variant="body1" fontWeight={600}>
-                            {formData.title || (activeTab === 0 ? 'Category Title' : activeTab === 1 ? 'Topic Title' : 'Content Title')}
+                            {formData.title || (editingItemType === 'category' ? 'Category Title' : editingItemType === 'topic' ? 'Topic Title' : 'Content Title')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             Custom URL: {iconUrlLoading ? 'Loading...' : 'Loaded successfully'}
@@ -1319,7 +1344,7 @@ const ContentManagement: React.FC = () => {
                         </Avatar>
                         <Box>
                           <Typography variant="body1" fontWeight={600}>
-                            {formData.title || (activeTab === 0 ? 'Category Title' : activeTab === 1 ? 'Topic Title' : 'Content Title')}
+                            {formData.title || (editingItemType === 'category' ? 'Category Title' : editingItemType === 'topic' ? 'Topic Title' : 'Content Title')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             No icon selected
@@ -1332,7 +1357,7 @@ const ContentManagement: React.FC = () => {
               </Card>
             )}
 
-            {activeTab === 1 && (
+            {editingItemType === 'topic' && (
               <FormControl fullWidth required>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -1349,7 +1374,7 @@ const ContentManagement: React.FC = () => {
               </FormControl>
             )}
 
-            {activeTab === 2 && (
+            {editingItemType === 'content' && (
               <>
                 <FormControl fullWidth required>
                   <InputLabel>Category</InputLabel>
@@ -1388,7 +1413,7 @@ const ContentManagement: React.FC = () => {
               </>
             )}
 
-            {(activeTab === 0 || activeTab === 1) && (
+            {(editingItemType === 'category' || editingItemType === 'topic') && (
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
                   🎨 Color
@@ -1428,7 +1453,7 @@ const ContentManagement: React.FC = () => {
               </Box>
             )}
 
-            {activeTab === 2 && (
+            {editingItemType === 'content' && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
                   Content
@@ -1443,7 +1468,7 @@ const ContentManagement: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => { setDialogOpen(false); setEditingItemType(null); }}>Cancel</Button>
           <Button variant="contained" onClick={handleSave}>
             {editMode === 'create' ? 'Create' : 'Update'}
           </Button>
