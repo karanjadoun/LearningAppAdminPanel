@@ -85,6 +85,7 @@ function TabPanel(props: TabPanelProps) {
 // Helper function to get emoji for icon names
 const getIconEmoji = (iconName: string): string => {
   const iconMap: { [key: string]: string } = {
+    // Subject Icons
     'ic_math': '📐',
     'ic_science': '🔬',
     'ic_history': '📚',
@@ -105,6 +106,27 @@ const getIconEmoji = (iconName: string): string => {
     'ic_engineering': '⚙️',
     'ic_medicine': '⚕️',
     'ic_law': '⚖️',
+    // Content-specific Icons
+    'ic_lesson': '📖',
+    'ic_experiment': '🧪',
+    'ic_theory': '📋',
+    'ic_practice': '✍️',
+    'ic_video': '🎥',
+    'ic_audio': '🎧',
+    'ic_document': '📄',
+    'ic_worksheet': '📝',
+    'ic_quiz': '❓',
+    'ic_assignment': '📌',
+    'ic_research': '🔍',
+    'ic_presentation': '📊',
+    'ic_tutorial': '🎯',
+    'ic_guide': '🗺️',
+    'ic_example': '💡',
+    'ic_solution': '✅',
+    'ic_formula': '🔢',
+    'ic_diagram': '📐',
+    'ic_chart': '📈',
+    'ic_table': '📊',
   };
   return iconMap[iconName] || '📁';
 };
@@ -325,8 +347,12 @@ const ContentManagement: React.FC = () => {
         const data: any = {
           title: formData.title,
           content: formData.content,
-          colorHex: formData.colorHex,
         };
+
+        // Only add colorHex for categories and topics, not content
+        if (activeTab === 0 || activeTab === 1) {
+          data.colorHex = formData.colorHex;
+        }
 
         // Handle icon data based on type
         if (formData.iconType === 'url') {
@@ -377,8 +403,12 @@ const ContentManagement: React.FC = () => {
           const data: any = {
             title: formData.title,
             content: formData.content,
-            colorHex: formData.colorHex,
           };
+
+          // Only add colorHex for categories and topics, not content
+          if (activeTab === 0 || activeTab === 1) {
+            data.colorHex = formData.colorHex;
+          }
 
           // Handle icon data based on type
           if (formData.iconType === 'url') {
@@ -890,6 +920,7 @@ const ContentManagement: React.FC = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Title</TableCell>
+                    <TableCell>Icon</TableCell>
                     <TableCell>Category</TableCell>
                     <TableCell>Topic</TableCell>
                     <TableCell>Has Content</TableCell>
@@ -900,10 +931,34 @@ const ContentManagement: React.FC = () => {
                   {content.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <ContentIcon sx={{ color: 'warning.main' }} />
-                          <Typography>{item.title}</Typography>
-                        </Box>
+                        <Typography>{item.title}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        {(item as any).iconUrl ? (
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'transparent' }}>
+                            <img 
+                              src={(item as any).iconUrl} 
+                              alt={item.title}
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                                borderRadius: '50%'
+                              }}
+                              onError={(e) => {
+                                // Fallback to default icon if URL fails
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement!.innerHTML = `<svg style="color: warning.main; font-size: 1.5rem;"><use href="#content-icon"></use></svg>`;
+                              }}
+                            />
+                          </Avatar>
+                        ) : (item as any).icon ? (
+                          <Box sx={{ fontSize: '1.5rem' }}>
+                            {getIconEmoji((item as any).icon)}
+                          </Box>
+                        ) : (
+                          <ContentIcon sx={{ color: 'warning.main', fontSize: '1.5rem' }} />
+                        )}
                       </TableCell>
                       <TableCell>
                         <Chip 
@@ -938,7 +993,7 @@ const ContentManagement: React.FC = () => {
                   ))}
                   {content.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         <Typography color="text.secondary">
                           {hasActiveContentFilters ? 'No content matches your filters.' : 'No content yet. Create your first content item!'}
                         </Typography>
@@ -982,7 +1037,7 @@ const ContentManagement: React.FC = () => {
               required
             />
 
-            {(activeTab === 0 || activeTab === 1) && (
+            {(activeTab === 0 || activeTab === 1 || activeTab === 2) && (
               <Card variant="outlined" sx={{ p: 3, backgroundColor: 'grey.50' }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <ImageIcon />
@@ -1047,6 +1102,7 @@ const ContentManagement: React.FC = () => {
                       <MenuItem value="">
                         <em>No Icon</em>
                       </MenuItem>
+                      {/* Subject Icons */}
                       <MenuItem value="ic_math">📐 Mathematics</MenuItem>
                       <MenuItem value="ic_science">🔬 Science</MenuItem>
                       <MenuItem value="ic_history">📚 History</MenuItem>
@@ -1067,6 +1123,31 @@ const ContentManagement: React.FC = () => {
                       <MenuItem value="ic_engineering">⚙️ Engineering</MenuItem>
                       <MenuItem value="ic_medicine">⚕️ Medicine</MenuItem>
                       <MenuItem value="ic_law">⚖️ Law</MenuItem>
+                      {/* Content-specific Icons */}
+                      {activeTab === 2 && (
+                        <>
+                          <MenuItem value="ic_lesson">📖 Lesson</MenuItem>
+                          <MenuItem value="ic_experiment">🧪 Experiment</MenuItem>
+                          <MenuItem value="ic_theory">📋 Theory</MenuItem>
+                          <MenuItem value="ic_practice">✍️ Practice</MenuItem>
+                          <MenuItem value="ic_video">🎥 Video</MenuItem>
+                          <MenuItem value="ic_audio">🎧 Audio</MenuItem>
+                          <MenuItem value="ic_document">📄 Document</MenuItem>
+                          <MenuItem value="ic_worksheet">📝 Worksheet</MenuItem>
+                          <MenuItem value="ic_quiz">❓ Quiz</MenuItem>
+                          <MenuItem value="ic_assignment">📌 Assignment</MenuItem>
+                          <MenuItem value="ic_research">🔍 Research</MenuItem>
+                          <MenuItem value="ic_presentation">📊 Presentation</MenuItem>
+                          <MenuItem value="ic_tutorial">🎯 Tutorial</MenuItem>
+                          <MenuItem value="ic_guide">🗺️ Guide</MenuItem>
+                          <MenuItem value="ic_example">💡 Example</MenuItem>
+                          <MenuItem value="ic_solution">✅ Solution</MenuItem>
+                          <MenuItem value="ic_formula">🔢 Formula</MenuItem>
+                          <MenuItem value="ic_diagram">📐 Diagram</MenuItem>
+                          <MenuItem value="ic_chart">📈 Chart</MenuItem>
+                          <MenuItem value="ic_table">📊 Table</MenuItem>
+                        </>
+                      )}
                     </Select>
                   </FormControl>
                 )}
@@ -1150,7 +1231,7 @@ const ContentManagement: React.FC = () => {
                         </Avatar>
                         <Box>
                           <Typography variant="body1" fontWeight={600}>
-                            {formData.title || 'Category Title'}
+                            {formData.title || (activeTab === 0 ? 'Category Title' : activeTab === 1 ? 'Topic Title' : 'Content Title')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             Predefined: {formData.icon}
@@ -1183,7 +1264,7 @@ const ContentManagement: React.FC = () => {
                         </Avatar>
                         <Box>
                           <Typography variant="body1" fontWeight={600}>
-                            {formData.title || 'Category Title'}
+                            {formData.title || (activeTab === 0 ? 'Category Title' : activeTab === 1 ? 'Topic Title' : 'Content Title')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             Custom URL: {iconUrlLoading ? 'Loading...' : 'Loaded successfully'}
@@ -1238,7 +1319,7 @@ const ContentManagement: React.FC = () => {
                         </Avatar>
                         <Box>
                           <Typography variant="body1" fontWeight={600}>
-                            {formData.title || 'Category Title'}
+                            {formData.title || (activeTab === 0 ? 'Category Title' : activeTab === 1 ? 'Topic Title' : 'Content Title')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
                             No icon selected
