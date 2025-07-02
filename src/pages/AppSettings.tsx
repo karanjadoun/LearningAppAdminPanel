@@ -56,6 +56,9 @@ interface AppSettings {
   // Promo Card
   promoCardTitle: string;
   promoCardSubtitle: string;
+  promoCardBackgroundColor: string;
+  promoCardTitleColor: string;
+  promoCardSubtitleColor: string;
   
   // Bottom Navigation Colors
   bottomNavHomeColor: string;
@@ -102,6 +105,9 @@ const defaultSettings: AppSettings = {
   // Promo Card
   promoCardTitle: 'Study App',
   promoCardSubtitle: 'Every Books Solutions\nAvailable for Free',
+  promoCardBackgroundColor: '#fe4a49',
+  promoCardTitleColor: '#FFFFFF',
+  promoCardSubtitleColor: '#FFFFFF',
   
   // Bottom Navigation Colors
   bottomNavHomeColor: '#3B82F6',     // Modern Blue
@@ -473,6 +479,194 @@ const AppSettings: React.FC = () => {
                   />
                 </Grid>
               </Grid>
+
+              {/* Promo Card Color Controls */}
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  🎨 Promo Card Colors
+                </Typography>
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    Customize the colors of your promo card. Changes will be applied instantly in the mobile app.
+                  </Typography>
+                </Alert>
+                
+                <Grid container spacing={3}>
+                  {/* Promo Card Background Color */}
+                  <Grid item xs={12} md={6} lg={4}>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        🎨 Background Color
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <input
+                          type="color"
+                          value={settings.promoCardBackgroundColor}
+                          onChange={(e) => setSettings(prev => ({ ...prev, promoCardBackgroundColor: e.target.value }))}
+                          style={{ 
+                            width: 50, 
+                            height: 40, 
+                            border: 'none', 
+                            borderRadius: 8, 
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
+                        />
+                        <TextField
+                          size="small"
+                          value={settings.promoCardBackgroundColor}
+                          onChange={(e) => setSettings(prev => ({ ...prev, promoCardBackgroundColor: e.target.value }))}
+                          sx={{ flexGrow: 1 }}
+                          InputProps={{
+                            style: { fontFamily: 'monospace' }
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ 
+                        width: '100%', 
+                        height: 20, 
+                        backgroundColor: settings.promoCardBackgroundColor,
+                        borderRadius: 1,
+                        border: '1px solid #E5E7EB'
+                      }} />
+                    </Box>
+                  </Grid>
+
+                  {/* Promo Card Title Color */}
+                  <Grid item xs={12} md={6} lg={4}>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        📝 Title Text Color
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <input
+                          type="color"
+                          value={settings.promoCardTitleColor}
+                          onChange={(e) => setSettings(prev => ({ ...prev, promoCardTitleColor: e.target.value }))}
+                          style={{ 
+                            width: 50, 
+                            height: 40, 
+                            border: 'none', 
+                            borderRadius: 8, 
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
+                        />
+                        <TextField
+                          size="small"
+                          value={settings.promoCardTitleColor}
+                          onChange={(e) => setSettings(prev => ({ ...prev, promoCardTitleColor: e.target.value }))}
+                          sx={{ flexGrow: 1 }}
+                          InputProps={{
+                            style: { fontFamily: 'monospace' }
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ 
+                        width: '100%', 
+                        height: 20, 
+                        backgroundColor: settings.promoCardTitleColor,
+                        borderRadius: 1,
+                        border: '1px solid #E5E7EB'
+                      }} />
+                    </Box>
+                  </Grid>
+
+                  {/* Promo Card Subtitle Color */}
+                  <Grid item xs={12} md={6} lg={4}>
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        📄 Subtitle Text Color
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <input
+                          type="color"
+                          value={settings.promoCardSubtitleColor}
+                          onChange={(e) => setSettings(prev => ({ ...prev, promoCardSubtitleColor: e.target.value }))}
+                          style={{ 
+                            width: 50, 
+                            height: 40, 
+                            border: 'none', 
+                            borderRadius: 8, 
+                            cursor: 'pointer',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }}
+                        />
+                        <TextField
+                          size="small"
+                          value={settings.promoCardSubtitleColor}
+                          onChange={(e) => setSettings(prev => ({ ...prev, promoCardSubtitleColor: e.target.value }))}
+                          sx={{ flexGrow: 1 }}
+                          InputProps={{
+                            style: { fontFamily: 'monospace' }
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ 
+                        width: '100%', 
+                        height: 20, 
+                        backgroundColor: settings.promoCardSubtitleColor,
+                        borderRadius: 1,
+                        border: '1px solid #E5E7EB'
+                      }} />
+                    </Box>
+                  </Grid>
+
+                  {/* Promo Card Preview */}
+                  <Grid item xs={12}>
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                        Live Preview:
+                      </Typography>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        p: 3,
+                        backgroundColor: '#F9FAFB',
+                        borderRadius: 2,
+                        border: '1px solid #E5E7EB'
+                      }}>
+                        <Box sx={{ 
+                          backgroundColor: settings.promoCardBackgroundColor,
+                          p: 3,
+                          borderRadius: 3,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          minWidth: 280,
+                          textAlign: 'center'
+                        }}>
+                          <Typography 
+                            variant="h6" 
+                            sx={{ 
+                              color: settings.promoCardTitleColor,
+                              fontWeight: 700,
+                              mb: 1,
+                              fontSize: '1.1rem'
+                            }}
+                          >
+                            {settings.promoCardTitle}
+                          </Typography>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              color: settings.promoCardSubtitleColor,
+                              fontWeight: 500,
+                              whiteSpace: 'pre-line',
+                              lineHeight: 1.4
+                            }}
+                          >
+                            {settings.promoCardSubtitle}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                        Preview shows how the promo card will appear in your mobile app with the selected colors.
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

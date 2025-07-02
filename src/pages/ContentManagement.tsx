@@ -32,6 +32,11 @@ import {
   MenuItem as MenuItemComponent,
   InputAdornment,
   Grid,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Avatar,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,6 +49,10 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Palette as PaletteIcon,
+  BrokenImage as BrokenImageIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/contentService';
@@ -129,9 +138,16 @@ const ContentManagement: React.FC = () => {
     content: '',
     colorHex: '#6366f1',
     icon: '',
+    iconUrl: '',
+    iconType: 'predefined', // 'predefined' or 'url'
     categoryId: '',
     topicId: '',
   });
+
+  // Icon management states
+  const [iconUrlPreview, setIconUrlPreview] = useState<string | null>(null);
+  const [iconUrlError, setIconUrlError] = useState<string | null>(null);
+  const [iconUrlLoading, setIconUrlLoading] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState<{
@@ -155,6 +171,48 @@ const ContentManagement: React.FC = () => {
 
   const refreshData = () => {
     queryClient.invalidateQueries({ queryKey: ['contentTree'] });
+  };
+
+  // Icon URL validation
+  const validateIconUrl = (url: string): boolean => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
+  // Icon URL preview loader
+  const loadIconPreview = async (url: string) => {
+    if (!url || !validateIconUrl(url)) {
+      setIconUrlPreview(null);
+      setIconUrlError('Invalid URL format');
+      return;
+    }
+
+    setIconUrlLoading(true);
+    setIconUrlError(null);
+
+    try {
+      // Test if the image loads
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise((resolve, reject) => {
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = url;
+      });
+
+      setIconUrlPreview(url);
+      setIconUrlError(null);
+    } catch (error) {
+      setIconUrlPreview(null);
+      setIconUrlError('Unable to load image from URL');
+    } finally {
+      setIconUrlLoading(false);
+    }
   };
 
   // Extract categories, topics, and content from tree
@@ -209,9 +267,15 @@ const ContentManagement: React.FC = () => {
       content: '',
       colorHex: '#6366f1',
       icon: '',
+      iconUrl: '',
+      iconType: 'predefined',
       categoryId: '',
       topicId: '',
     });
+    // Reset icon states
+    setIconUrlPreview(null);
+    setIconUrlError(null);
+    setIconUrlLoading(false);
     setDialogOpen(true);
   };
 
@@ -219,14 +283,33 @@ const ContentManagement: React.FC = () => {
   const handleEdit = (item: ContentNode) => {
     setEditMode('edit');
     setSelectedItem(item);
+    
+    // Determine icon type and set appropriate fields
+    const hasIconUrl = (item as any).iconUrl;
+    const iconType = hasIconUrl ? 'url' : 'predefined';
+    
     setFormData({
       title: item.title,
       content: item.content || '',
       colorHex: item.colorHex || '#6366f1',
-      icon: item.icon || '',
+      icon: iconType === 'predefined' ? (item.icon || '') : '',
+      iconUrl: hasIconUrl || '',
+      iconType: iconType,
       categoryId: (item as any).categoryId || '',
       topicId: (item as any).topicId || '',
     });
+
+    // Reset icon states
+    setIconUrlError(null);
+    setIconUrlLoading(false);
+    
+    // Load icon preview if URL exists
+    if (hasIconUrl) {
+      setIconUrlPreview(hasIconUrl);
+    } else {
+      setIconUrlPreview(null);
+    }
+    
     setDialogOpen(true);
   };
 
@@ -239,12 +322,27 @@ const ContentManagement: React.FC = () => {
       }
 
       if (editMode === 'create') {
-        const data = {
+        const data: any = {
           title: formData.title,
           content: formData.content,
           colorHex: formData.colorHex,
-          icon: formData.icon,
         };
+
+        // Handle icon data based on type
+        if (formData.iconType === 'url') {
+          if (formData.iconUrl && validateIconUrl(formData.iconUrl)) {
+            data.iconUrl = formData.iconUrl;
+            data.iconType = 'url';
+            data.icon = null; // Clear predefined icon
+          } else {
+            showSnackbar('Please provide a valid icon URL', 'error');
+            return;
+          }
+        } else {
+          data.icon = formData.icon;
+          data.iconType = 'predefined';
+          data.iconUrl = null; // Clear URL
+        }
 
         if (activeTab === 0) {
           // Creating category
@@ -276,12 +374,28 @@ const ContentManagement: React.FC = () => {
       } else {
         // Editing existing item
         if (selectedItem) {
-          const data = {
+          const data: any = {
             title: formData.title,
             content: formData.content,
             colorHex: formData.colorHex,
-            icon: formData.icon,
           };
+
+          // Handle icon data based on type
+          if (formData.iconType === 'url') {
+            if (formData.iconUrl && validateIconUrl(formData.iconUrl)) {
+              data.iconUrl = formData.iconUrl;
+              data.iconType = 'url';
+              data.icon = null; // Clear predefined icon
+            } else {
+              showSnackbar('Please provide a valid icon URL', 'error');
+              return;
+            }
+          } else {
+            data.icon = formData.icon;
+            data.iconType = 'predefined';
+            data.iconUrl = null; // Clear URL
+          }
+
           await contentService.updateNode(selectedItem.id, data, selectedItem.fullPath);
           showSnackbar('Item updated successfully', 'success');
         }
@@ -421,7 +535,25 @@ const ContentManagement: React.FC = () => {
                       <Typography>{category.title}</Typography>
                     </TableCell>
                     <TableCell>
-                      {category.icon ? (
+                      {(category as any).iconUrl ? (
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'transparent' }}>
+                          <img 
+                            src={(category as any).iconUrl} 
+                            alt={category.title}
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'contain',
+                              borderRadius: '50%'
+                            }}
+                            onError={(e) => {
+                              // Fallback to default icon if URL fails
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.innerHTML = `<svg style="color: ${category.colorHex}; font-size: 1.5rem;"><use href="#category-icon"></use></svg>`;
+                            }}
+                          />
+                        </Avatar>
+                      ) : category.icon ? (
                         <Box sx={{ fontSize: '1.5rem' }}>
                           {getIconEmoji(category.icon)}
                         </Box>
@@ -578,7 +710,25 @@ const ContentManagement: React.FC = () => {
                         <Typography>{topic.title}</Typography>
                       </TableCell>
                       <TableCell>
-                        {topic.icon ? (
+                        {(topic as any).iconUrl ? (
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'transparent' }}>
+                            <img 
+                              src={(topic as any).iconUrl} 
+                              alt={topic.title}
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                                borderRadius: '50%'
+                              }}
+                              onError={(e) => {
+                                // Fallback to default icon if URL fails
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement!.innerHTML = `<svg style="color: ${topic.colorHex || 'primary.main'}; font-size: 1.5rem;"><use href="#topic-icon"></use></svg>`;
+                              }}
+                            />
+                          </Avatar>
+                        ) : topic.icon ? (
                           <Box sx={{ fontSize: '1.5rem' }}>
                             {getIconEmoji(topic.icon)}
                           </Box>
@@ -833,38 +983,272 @@ const ContentManagement: React.FC = () => {
             />
 
             {(activeTab === 0 || activeTab === 1) && (
-              <FormControl fullWidth>
-                <InputLabel>Icon</InputLabel>
-                <Select
-                  value={formData.icon}
-                  onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                  label="Icon"
-                >
-                  <MenuItem value="">
-                    <em>No Icon</em>
-                  </MenuItem>
-                  <MenuItem value="ic_math">📐 ic_math</MenuItem>
-                  <MenuItem value="ic_science">🔬 ic_science</MenuItem>
-                  <MenuItem value="ic_history">📚 ic_history</MenuItem>
-                  <MenuItem value="ic_geography">🌍 ic_geography</MenuItem>
-                  <MenuItem value="ic_english">📝 ic_english</MenuItem>
-                  <MenuItem value="ic_physics">⚛️ ic_physics</MenuItem>
-                  <MenuItem value="ic_chemistry">🧪 ic_chemistry</MenuItem>
-                  <MenuItem value="ic_biology">🧬 ic_biology</MenuItem>
-                  <MenuItem value="ic_computer">💻 ic_computer</MenuItem>
-                  <MenuItem value="ic_art">🎨 ic_art</MenuItem>
-                  <MenuItem value="ic_music">🎵 ic_music</MenuItem>
-                  <MenuItem value="ic_sports">⚽ ic_sports</MenuItem>
-                  <MenuItem value="ic_language">🌐 ic_language</MenuItem>
-                  <MenuItem value="ic_economics">💰 ic_economics</MenuItem>
-                  <MenuItem value="ic_philosophy">🤔 ic_philosophy</MenuItem>
-                  <MenuItem value="ic_psychology">🧠 ic_psychology</MenuItem>
-                  <MenuItem value="ic_literature">📖 ic_literature</MenuItem>
-                  <MenuItem value="ic_engineering">⚙️ ic_engineering</MenuItem>
-                  <MenuItem value="ic_medicine">⚕️ ic_medicine</MenuItem>
-                  <MenuItem value="ic_law">⚖️ ic_law</MenuItem>
-                </Select>
-              </FormControl>
+              <Card variant="outlined" sx={{ p: 3, backgroundColor: 'grey.50' }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ImageIcon />
+                  Icon Selection
+                </Typography>
+                
+                {/* Icon Type Selection */}
+                <FormControl component="fieldset" sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                    Icon Source
+                  </Typography>
+                  <RadioGroup
+                    row
+                    value={formData.iconType}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        iconType: newType,
+                        // Clear the other field when switching
+                        icon: newType === 'predefined' ? prev.icon : '',
+                        iconUrl: newType === 'url' ? prev.iconUrl : ''
+                      }));
+                      if (newType === 'predefined') {
+                        setIconUrlPreview(null);
+                        setIconUrlError(null);
+                      }
+                    }}
+                  >
+                    <FormControlLabel 
+                      value="predefined" 
+                      control={<Radio />} 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PaletteIcon fontSize="small" />
+                          Predefined Icon
+                        </Box>
+                      }
+                    />
+                    <FormControlLabel 
+                      value="url" 
+                      control={<Radio />} 
+                      label={
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LinkIcon fontSize="small" />
+                          Custom URL
+                        </Box>
+                      }
+                    />
+                  </RadioGroup>
+                </FormControl>
+
+                {/* Predefined Icon Selection */}
+                {formData.iconType === 'predefined' && (
+                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel>Select Icon</InputLabel>
+                    <Select
+                      value={formData.icon}
+                      onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
+                      label="Select Icon"
+                    >
+                      <MenuItem value="">
+                        <em>No Icon</em>
+                      </MenuItem>
+                      <MenuItem value="ic_math">📐 Mathematics</MenuItem>
+                      <MenuItem value="ic_science">🔬 Science</MenuItem>
+                      <MenuItem value="ic_history">📚 History</MenuItem>
+                      <MenuItem value="ic_geography">🌍 Geography</MenuItem>
+                      <MenuItem value="ic_english">📝 English</MenuItem>
+                      <MenuItem value="ic_physics">⚛️ Physics</MenuItem>
+                      <MenuItem value="ic_chemistry">🧪 Chemistry</MenuItem>
+                      <MenuItem value="ic_biology">🧬 Biology</MenuItem>
+                      <MenuItem value="ic_computer">💻 Computer Science</MenuItem>
+                      <MenuItem value="ic_art">🎨 Art</MenuItem>
+                      <MenuItem value="ic_music">🎵 Music</MenuItem>
+                      <MenuItem value="ic_sports">⚽ Sports</MenuItem>
+                      <MenuItem value="ic_language">🌐 Languages</MenuItem>
+                      <MenuItem value="ic_economics">💰 Economics</MenuItem>
+                      <MenuItem value="ic_philosophy">🤔 Philosophy</MenuItem>
+                      <MenuItem value="ic_psychology">🧠 Psychology</MenuItem>
+                      <MenuItem value="ic_literature">📖 Literature</MenuItem>
+                      <MenuItem value="ic_engineering">⚙️ Engineering</MenuItem>
+                      <MenuItem value="ic_medicine">⚕️ Medicine</MenuItem>
+                      <MenuItem value="ic_law">⚖️ Law</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+
+                {/* Custom URL Input */}
+                {formData.iconType === 'url' && (
+                  <Box sx={{ mb: 3 }}>
+                    <TextField
+                      fullWidth
+                      label="Icon URL"
+                      placeholder="https://example.com/icon.png or https://cdn.iconscout.com/..."
+                      value={formData.iconUrl}
+                      onChange={(e) => {
+                        const url = e.target.value;
+                        setFormData(prev => ({ ...prev, iconUrl: url }));
+                        
+                        // Debounce URL validation
+                        if (url) {
+                          setTimeout(() => {
+                            if (formData.iconUrl === url) {
+                              loadIconPreview(url);
+                            }
+                          }, 500);
+                        } else {
+                          setIconUrlPreview(null);
+                          setIconUrlError(null);
+                        }
+                      }}
+                      error={Boolean(iconUrlError)}
+                      helperText={iconUrlError || 'Enter a direct link to an image file (PNG, JPG, SVG, WebP)'}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LinkIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    
+                    {/* URL Examples */}
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Example URLs:</strong>
+                      </Typography>
+                      <Box sx={{ ml: 2 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          • https://img.icons8.com/color/48/000000/physics.png
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          • https://cdn.iconscout.com/icon/free/png-256/mathematics-1674925-1425228.png
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          • https://cdn.jsdelivr.net/gh/PKief/vscode-material-icon-theme@main/icons/science.svg
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Icon Preview */}
+                <Box sx={{ 
+                  p: 2, 
+                  border: '1px solid', 
+                  borderColor: 'divider', 
+                  borderRadius: 2, 
+                  backgroundColor: 'background.paper' 
+                }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                    Preview:
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {formData.iconType === 'predefined' && formData.icon ? (
+                      <>
+                        <Avatar sx={{ 
+                          bgcolor: formData.colorHex, 
+                          width: 48, 
+                          height: 48,
+                          fontSize: '1.5rem'
+                        }}>
+                          {getIconEmoji(formData.icon)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            {formData.title || 'Category Title'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Predefined: {formData.icon}
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : formData.iconType === 'url' && iconUrlPreview ? (
+                      <>
+                        <Avatar sx={{ 
+                          bgcolor: 'transparent', 
+                          width: 48, 
+                          height: 48,
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}>
+                          <img 
+                            src={iconUrlPreview} 
+                            alt="Icon preview"
+                            style={{ 
+                              width: '100%', 
+                              height: '100%', 
+                              objectFit: 'contain',
+                              borderRadius: '50%'
+                            }}
+                            onError={() => {
+                              setIconUrlPreview(null);
+                              setIconUrlError('Failed to load image');
+                            }}
+                          />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            {formData.title || 'Category Title'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Custom URL: {iconUrlLoading ? 'Loading...' : 'Loaded successfully'}
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : formData.iconType === 'url' && iconUrlError ? (
+                      <>
+                        <Avatar sx={{ 
+                          bgcolor: 'error.light', 
+                          width: 48, 
+                          height: 48,
+                          color: 'error.main'
+                        }}>
+                          <BrokenImageIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" color="error.main" fontWeight={600}>
+                            Failed to load icon
+                          </Typography>
+                          <Typography variant="body2" color="error.main">
+                            {iconUrlError}
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : formData.iconType === 'url' && iconUrlLoading ? (
+                      <>
+                        <Avatar sx={{ 
+                          bgcolor: 'grey.200', 
+                          width: 48, 
+                          height: 48 
+                        }}>
+                          <CircularProgress size={24} />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            Loading icon...
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Testing URL accessibility
+                          </Typography>
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Avatar sx={{ 
+                          bgcolor: formData.colorHex, 
+                          width: 48, 
+                          height: 48 
+                        }}>
+                          <CategoryIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            {formData.title || 'Category Title'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            No icon selected
+                          </Typography>
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              </Card>
             )}
 
             {activeTab === 1 && (
@@ -923,13 +1307,45 @@ const ContentManagement: React.FC = () => {
               </>
             )}
 
-            <TextField
-              fullWidth
-              label="Color"
-              type="color"
-              value={formData.colorHex}
-              onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
-            />
+            {(activeTab === 0 || activeTab === 1) && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  🎨 Color
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                  <input
+                    type="color"
+                    value={formData.colorHex}
+                    onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                    style={{ 
+                      width: 50, 
+                      height: 40, 
+                      border: 'none', 
+                      borderRadius: 8, 
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <TextField
+                    size="small"
+                    label="Hex Color"
+                    value={formData.colorHex}
+                    onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                    sx={{ flexGrow: 1 }}
+                    InputProps={{
+                      style: { fontFamily: 'monospace' }
+                    }}
+                  />
+                </Box>
+                <Box sx={{ 
+                  width: '100%', 
+                  height: 20, 
+                  backgroundColor: formData.colorHex,
+                  borderRadius: 1,
+                  border: '1px solid #E5E7EB'
+                }} />
+              </Box>
+            )}
 
             {activeTab === 2 && (
               <Box>
