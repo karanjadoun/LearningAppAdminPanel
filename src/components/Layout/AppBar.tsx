@@ -69,11 +69,6 @@ const AppBar: React.FC<AppBarProps> = ({ onMenuClick, sidebarOpen, sidebarWidth 
           title: 'Advanced Settings',
           subtitle: 'Manage Firebase, database, and system configurations',
         };
-      case '/ads-settings':
-        return {
-          title: 'Ads Settings',
-          subtitle: 'Control your app\'s advertisement settings and revenue optimization',
-        };
       default:
         return {
           title: `${config.appName} ${config.appTitle}`,

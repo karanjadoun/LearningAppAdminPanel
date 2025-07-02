@@ -15,7 +15,6 @@ import ContentManagement from './pages/ContentManagement';
 import Settings from './pages/Settings';
 import AdvancedSettings from './pages/AdvancedSettings';
 import AppSettings from './pages/AppSettings';
-import AdSettings from './pages/AdSettings';
 import LoginPage from './components/Auth/LoginPage';
 import SetupWizard from './components/Setup/SetupWizard';
 
@@ -411,7 +410,6 @@ const AppContent: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/advanced-settings" element={<AdvancedSettings />} />
             <Route path="/app-settings" element={<AppSettings />} />
-            <Route path="/ads-settings" element={<AdSettings />} />
           </Routes>
         </Box>
       </Box>

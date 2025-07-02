@@ -21,7 +21,6 @@ import {
   Settings as SettingsIcon,
   AdminPanelSettings as AdvancedSettingsIcon,
   MobileScreenShare as AppSettingsIcon,
-  MonetizationOn as AdsIcon,
   School as SchoolIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
@@ -61,12 +60,6 @@ const menuItems: MenuItem[] = [
     label: 'App Settings',
     icon: AppSettingsIcon,
     path: '/app-settings',
-  },
-  {
-    id: 'ads-settings',
-    label: 'Ads Settings',
-    icon: AdsIcon,
-    path: '/ads-settings',
   },
   {
     id: 'settings',
