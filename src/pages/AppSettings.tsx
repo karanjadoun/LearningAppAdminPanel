@@ -60,6 +60,10 @@ interface AppSettings {
   promoCardTitleColor: string;
   promoCardSubtitleColor: string;
   
+  // Loading Animation Colors
+  loadingAnimationColor: string;
+  loadingTextColor: string;
+  
   // Bottom Navigation Colors
   bottomNavHomeColor: string;
   bottomNavHeartColor: string;
@@ -108,6 +112,10 @@ const defaultSettings: AppSettings = {
   promoCardBackgroundColor: '#fe4a49',
   promoCardTitleColor: '#FFFFFF',
   promoCardSubtitleColor: '#FFFFFF',
+  
+  // Loading Animation Colors
+  loadingAnimationColor: '#FF156D',
+  loadingTextColor: '#666666',
   
   // Bottom Navigation Colors
   bottomNavHomeColor: '#3B82F6',     // Modern Blue
@@ -262,7 +270,21 @@ const AppSettings: React.FC = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ 
+        mb: 4,
+        position: 'fixed',
+        top: 0,
+        left: {
+          xs: 0, // Mobile: full width
+          lg: '280px' // Desktop: start after sidebar (280px width)
+        },
+        right: 0,
+        backgroundColor: '#fff',
+        zIndex: 1000,
+        borderBottom: '1px solid #E5E7EB',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        p: 3
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
             App Settings
@@ -294,6 +316,9 @@ const AppSettings: React.FC = () => {
           Control your app's dynamic settings that users see in the mobile app
         </Typography>
       </Box>
+
+      {/* Spacer to prevent content from being hidden behind fixed header */}
+      <Box sx={{ height: 120, mb: 3 }} />
 
       {/* Info Alert */}
       <Alert severity="info" sx={{ mb: 3 }}>
@@ -667,6 +692,182 @@ const AppSettings: React.FC = () => {
                   </Grid>
                 </Grid>
               </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Loading Animation Colors */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <Box sx={{ 
+                  width: 24, 
+                  height: 24, 
+                  backgroundColor: settings.loadingAnimationColor,
+                  borderRadius: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '14px'
+                }}>
+                  🔄
+                </Box>
+                <Typography variant="h6" fontWeight={600}>
+                  Loading Animation Colors
+                </Typography>
+              </Box>
+              
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  <strong>🔄 Loading Colors:</strong> These colors control the loading animations (bouncing squares and text) that appear when content is loading throughout the app. Changes will appear instantly.
+                </Typography>
+              </Alert>
+              
+              <Grid container spacing={3}>
+                {/* Loading Animation Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      🔳 Loading Squares Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.loadingAnimationColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, loadingAnimationColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.loadingAnimationColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, loadingAnimationColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.loadingAnimationColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Loading Text Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      📝 Loading Text Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.loadingTextColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, loadingTextColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.loadingTextColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, loadingTextColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.loadingTextColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                  </Box>
+                </Grid>
+
+                {/* Loading Animation Preview */}
+                <Grid item xs={12}>
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                      Live Preview:
+                    </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      justifyContent: 'center', 
+                      alignItems: 'center',
+                      p: 4,
+                      backgroundColor: '#F9FAFB',
+                      borderRadius: 2,
+                      border: '1px solid #E5E7EB',
+                      gap: 2
+                    }}>
+                      {/* Animated Loading Squares */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 1,
+                        alignItems: 'center'
+                      }}>
+                        {[0, 1, 2].map((index) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              width: 12,
+                              height: 12,
+                              backgroundColor: settings.loadingAnimationColor,
+                              borderRadius: 1,
+                              animation: 'bounce 1.4s ease-in-out infinite both',
+                              animationDelay: `${index * 0.16}s`,
+                              '@keyframes bounce': {
+                                '0%, 80%, 100%': {
+                                  transform: 'scale(0)',
+                                },
+                                '40%': {
+                                  transform: 'scale(1.0)',
+                                },
+                              },
+                            }}
+                          />
+                        ))}
+                      </Box>
+                      
+                      {/* Loading Text */}
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          color: settings.loadingTextColor,
+                          fontWeight: 500
+                        }}
+                      >
+                        Loading content...
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                      Preview shows the loading animation with your selected colors as it appears in the mobile app.
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </Grid>

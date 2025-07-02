@@ -32,11 +32,6 @@ import {
   MenuItem as MenuItemComponent,
   InputAdornment,
   Grid,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
-  Avatar,
-  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -49,10 +44,6 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   Clear as ClearIcon,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Palette as PaletteIcon,
-  BrokenImage as BrokenImageIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contentService } from '../services/contentService';
@@ -85,7 +76,6 @@ function TabPanel(props: TabPanelProps) {
 // Helper function to get emoji for icon names
 const getIconEmoji = (iconName: string): string => {
   const iconMap: { [key: string]: string } = {
-    // Subject Icons
     'ic_math': '📐',
     'ic_science': '🔬',
     'ic_history': '📚',
@@ -106,29 +96,67 @@ const getIconEmoji = (iconName: string): string => {
     'ic_engineering': '⚙️',
     'ic_medicine': '⚕️',
     'ic_law': '⚖️',
-    // Content-specific Icons
-    'ic_lesson': '📖',
-    'ic_experiment': '🧪',
-    'ic_theory': '📋',
-    'ic_practice': '✍️',
-    'ic_video': '🎥',
-    'ic_audio': '🎧',
-    'ic_document': '📄',
-    'ic_worksheet': '📝',
-    'ic_quiz': '❓',
-    'ic_assignment': '📌',
-    'ic_research': '🔍',
-    'ic_presentation': '📊',
-    'ic_tutorial': '🎯',
-    'ic_guide': '🗺️',
-    'ic_example': '💡',
-    'ic_solution': '✅',
-    'ic_formula': '🔢',
-    'ic_diagram': '📐',
-    'ic_chart': '📈',
-    'ic_table': '📊',
   };
   return iconMap[iconName] || '📁';
+};
+
+// Helper function to check if string is a valid URL
+const isValidUrl = (string: string): boolean => {
+  try {
+    const url = new URL(string);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+};
+
+// Helper function to render icon preview
+const renderIconPreview = (icon: string | undefined): React.ReactNode => {
+  if (!icon) {
+    return <Box sx={{ width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5', borderRadius: 1 }}>?</Box>;
+  }
+  
+  if (isValidUrl(icon)) {
+    return (
+      <Box sx={{ position: 'relative', width: 24, height: 24 }}>
+        <img 
+          src={icon} 
+          alt="Icon" 
+          style={{ 
+            width: 24, 
+            height: 24, 
+            borderRadius: 4, 
+            objectFit: 'cover',
+            border: '1px solid #e0e0e0'
+          }}
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+        <Box sx={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: 24, 
+          height: 24, 
+          display: 'none', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          backgroundColor: '#f5f5f5', 
+          borderRadius: 1,
+          fontSize: '12px'
+        }}>
+          ❌
+        </Box>
+      </Box>
+    );
+  } else {
+    return (
+      <Box sx={{ fontSize: '1.5rem', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {getIconEmoji(icon)}
+      </Box>
+    );
+  }
 };
 
 const ContentManagement: React.FC = () => {
@@ -160,19 +188,9 @@ const ContentManagement: React.FC = () => {
     content: '',
     colorHex: '#6366f1',
     icon: '',
-    iconUrl: '',
-    iconType: 'predefined', // 'predefined' or 'url'
     categoryId: '',
     topicId: '',
   });
-
-  // Track the type of item being edited (independent of active tab)
-  const [editingItemType, setEditingItemType] = useState<'category' | 'topic' | 'content' | null>(null);
-
-  // Icon management states
-  const [iconUrlPreview, setIconUrlPreview] = useState<string | null>(null);
-  const [iconUrlError, setIconUrlError] = useState<string | null>(null);
-  const [iconUrlLoading, setIconUrlLoading] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState<{
@@ -198,48 +216,6 @@ const ContentManagement: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['contentTree'] });
   };
 
-  // Icon URL validation
-  const validateIconUrl = (url: string): boolean => {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  };
-
-  // Icon URL preview loader
-  const loadIconPreview = async (url: string) => {
-    if (!url || !validateIconUrl(url)) {
-      setIconUrlPreview(null);
-      setIconUrlError('Invalid URL format');
-      return;
-    }
-
-    setIconUrlLoading(true);
-    setIconUrlError(null);
-
-    try {
-      // Test if the image loads
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      
-      await new Promise((resolve, reject) => {
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = url;
-      });
-
-      setIconUrlPreview(url);
-      setIconUrlError(null);
-    } catch (error) {
-      setIconUrlPreview(null);
-      setIconUrlError('Unable to load image from URL');
-    } finally {
-      setIconUrlLoading(false);
-    }
-  };
-
   // Extract categories, topics, and content from tree
   const categories = contentTree || [];
   const allTopics = categories.flatMap(cat => 
@@ -254,6 +230,8 @@ const ContentManagement: React.FC = () => {
       topicTitle: topic.title 
     }))
   );
+
+
 
   // Apply filters to topics
   const topics = allTopics.filter(topic => {
@@ -287,65 +265,29 @@ const ContentManagement: React.FC = () => {
   const handleCreate = (type: 'category' | 'topic' | 'content') => {
     setEditMode('create');
     setSelectedItem(null);
-    setEditingItemType(type);
     setFormData({
       title: '',
       content: '',
       colorHex: '#6366f1',
       icon: '',
-      iconUrl: '',
-      iconType: 'predefined',
       categoryId: '',
       topicId: '',
     });
-    // Reset icon states
-    setIconUrlPreview(null);
-    setIconUrlError(null);
-    setIconUrlLoading(false);
     setDialogOpen(true);
   };
 
   // Handle edit item
-  const handleEdit = (item: ContentNode, itemType?: 'category' | 'topic' | 'content') => {
+  const handleEdit = (item: ContentNode) => {
     setEditMode('edit');
     setSelectedItem(item);
-    
-    // Determine item type if not provided
-    let detectedType: 'category' | 'topic' | 'content' = itemType || 'category';
-    if (!itemType) {
-      // Auto-detect based on current active tab as fallback
-      if (activeTab === 0) detectedType = 'category';
-      else if (activeTab === 1) detectedType = 'topic';
-      else if (activeTab === 2) detectedType = 'content';
-    }
-    setEditingItemType(detectedType);
-    
-    // Determine icon type and set appropriate fields
-    const hasIconUrl = (item as any).iconUrl;
-    const iconType = hasIconUrl ? 'url' : 'predefined';
-    
     setFormData({
       title: item.title,
       content: item.content || '',
       colorHex: item.colorHex || '#6366f1',
-      icon: iconType === 'predefined' ? (item.icon || '') : '',
-      iconUrl: hasIconUrl || '',
-      iconType: iconType,
+      icon: item.icon || '',
       categoryId: (item as any).categoryId || '',
       topicId: (item as any).topicId || '',
     });
-
-    // Reset icon states
-    setIconUrlError(null);
-    setIconUrlLoading(false);
-    
-    // Load icon preview if URL exists
-    if (hasIconUrl) {
-      setIconUrlPreview(hasIconUrl);
-    } else {
-      setIconUrlPreview(null);
-    }
-    
     setDialogOpen(true);
   };
 
@@ -358,37 +300,17 @@ const ContentManagement: React.FC = () => {
       }
 
       if (editMode === 'create') {
-        const data: any = {
+        let data: any = {
           title: formData.title,
-          content: formData.content,
+          icon: formData.icon,
+          colorHex: formData.colorHex, // Include color for ALL content types
         };
 
-        // Only add colorHex for categories and topics, not content
-        if (editingItemType === 'category' || editingItemType === 'topic') {
-          data.colorHex = formData.colorHex;
-        }
-
-        // Handle icon data based on type
-        if (formData.iconType === 'url') {
-          if (formData.iconUrl && validateIconUrl(formData.iconUrl)) {
-            data.iconUrl = formData.iconUrl;
-            data.iconType = 'url';
-            data.icon = null; // Clear predefined icon
-          } else {
-            showSnackbar('Please provide a valid icon URL', 'error');
-            return;
-          }
-        } else {
-          data.icon = formData.icon;
-          data.iconType = 'predefined';
-          data.iconUrl = null; // Clear URL
-        }
-
-        if (editingItemType === 'category') {
+        if (activeTab === 0) {
           // Creating category
           await contentService.createRootCategory(data);
           showSnackbar('Category created successfully', 'success');
-        } else if (editingItemType === 'topic') {
+        } else if (activeTab === 1) {
           // Creating topic
           if (!formData.categoryId) {
             showSnackbar('Please select a category', 'error');
@@ -399,45 +321,34 @@ const ContentManagement: React.FC = () => {
             await contentService.createChild(category.id, data, [...(category.fullPath || []), 'children']);
             showSnackbar('Topic created successfully', 'success');
           }
-        } else if (editingItemType === 'content') {
-          // Creating content
+        } else if (activeTab === 2) {
+          // Creating content - include content body, color, and icon
           if (!formData.categoryId || !formData.topicId) {
             showSnackbar('Please select both category and topic', 'error');
             return;
           }
+          data.content = formData.content; // Add content body for content items
           const topic = topics.find(t => t.id === formData.topicId);
           if (topic) {
             await contentService.createChild(topic.id, data, [...(topic.fullPath || []), 'children']);
             showSnackbar('Content created successfully', 'success');
+          } else {
+            showSnackbar('Error: Topic not found', 'error');
+            return;
           }
         }
       } else {
         // Editing existing item
         if (selectedItem) {
-          const data: any = {
+          let data: any = {
             title: formData.title,
-            content: formData.content,
+            icon: formData.icon,
+            colorHex: formData.colorHex, // Include color for ALL content types
           };
 
-          // Only add colorHex for categories and topics, not content
-          if (editingItemType === 'category' || editingItemType === 'topic') {
-            data.colorHex = formData.colorHex;
-          }
-
-          // Handle icon data based on type
-          if (formData.iconType === 'url') {
-            if (formData.iconUrl && validateIconUrl(formData.iconUrl)) {
-              data.iconUrl = formData.iconUrl;
-              data.iconType = 'url';
-              data.icon = null; // Clear predefined icon
-            } else {
-              showSnackbar('Please provide a valid icon URL', 'error');
-              return;
-            }
-          } else {
-            data.icon = formData.icon;
-            data.iconType = 'predefined';
-            data.iconUrl = null; // Clear URL
+          // Add content body only for content items
+          if (activeTab === 2) {
+            data.content = formData.content;
           }
 
           await contentService.updateNode(selectedItem.id, data, selectedItem.fullPath);
@@ -446,7 +357,6 @@ const ContentManagement: React.FC = () => {
       }
 
       setDialogOpen(false);
-      setEditingItemType(null);
       refreshData();
     } catch (error) {
       console.error('Error saving:', error);
@@ -481,14 +391,9 @@ const ContentManagement: React.FC = () => {
   };
 
   const getDialogTitle = () => {
-    const typeMap = {
-      'category': 'Category',
-      'topic': 'Topic',
-      'content': 'Content'
-    };
+    const types = ['Category', 'Topic', 'Content'];
     const action = editMode === 'create' ? 'Create' : 'Edit';
-    const type = editingItemType ? typeMap[editingItemType] : 'Item';
-    return `${action} ${type}`;
+    return `${action} ${types[activeTab]}`;
   };
 
   // Filter helper functions
@@ -585,31 +490,12 @@ const ContentManagement: React.FC = () => {
                       <Typography>{category.title}</Typography>
                     </TableCell>
                     <TableCell>
-                      {(category as any).iconUrl ? (
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'transparent' }}>
-                          <img 
-                            src={(category as any).iconUrl} 
-                            alt={category.title}
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
-                              objectFit: 'contain',
-                              borderRadius: '50%'
-                            }}
-                            onError={(e) => {
-                              // Fallback to default icon if URL fails
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.parentElement!.innerHTML = `<svg style="color: ${category.colorHex}; font-size: 1.5rem;"><use href="#category-icon"></use></svg>`;
-                            }}
-                          />
-                        </Avatar>
-                      ) : category.icon ? (
-                        <Box sx={{ fontSize: '1.5rem' }}>
-                          {getIconEmoji(category.icon)}
-                        </Box>
-                      ) : (
-                        <CategoryIcon sx={{ color: category.colorHex, fontSize: '1.5rem' }} />
-                      )}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {renderIconPreview(category.icon)}
+                        {!category.icon && (
+                          <CategoryIcon sx={{ color: category.colorHex, fontSize: '1.5rem' }} />
+                        )}
+                      </Box>
                     </TableCell>
                     <TableCell>
                       <Chip 
@@ -760,31 +646,12 @@ const ContentManagement: React.FC = () => {
                         <Typography>{topic.title}</Typography>
                       </TableCell>
                       <TableCell>
-                        {(topic as any).iconUrl ? (
-                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'transparent' }}>
-                            <img 
-                              src={(topic as any).iconUrl} 
-                              alt={topic.title}
-                              style={{ 
-                                width: '100%', 
-                                height: '100%', 
-                                objectFit: 'contain',
-                                borderRadius: '50%'
-                              }}
-                              onError={(e) => {
-                                // Fallback to default icon if URL fails
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement!.innerHTML = `<svg style="color: ${topic.colorHex || 'primary.main'}; font-size: 1.5rem;"><use href="#topic-icon"></use></svg>`;
-                              }}
-                            />
-                          </Avatar>
-                        ) : topic.icon ? (
-                          <Box sx={{ fontSize: '1.5rem' }}>
-                            {getIconEmoji(topic.icon)}
-                          </Box>
-                        ) : (
-                          <TopicIcon sx={{ color: topic.colorHex || 'primary.main', fontSize: '1.5rem' }} />
-                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {renderIconPreview(topic.icon)}
+                          {!topic.icon && (
+                            <TopicIcon sx={{ color: topic.colorHex || 'primary.main', fontSize: '1.5rem' }} />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Chip 
@@ -943,6 +810,7 @@ const ContentManagement: React.FC = () => {
                     <TableCell>Icon</TableCell>
                     <TableCell>Category</TableCell>
                     <TableCell>Topic</TableCell>
+                    <TableCell>Color</TableCell>
                     <TableCell>Has Content</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
@@ -954,31 +822,12 @@ const ContentManagement: React.FC = () => {
                         <Typography>{item.title}</Typography>
                       </TableCell>
                       <TableCell>
-                        {(item as any).iconUrl ? (
-                          <Avatar sx={{ width: 32, height: 32, bgcolor: 'transparent' }}>
-                            <img 
-                              src={(item as any).iconUrl} 
-                              alt={item.title}
-                              style={{ 
-                                width: '100%', 
-                                height: '100%', 
-                                objectFit: 'contain',
-                                borderRadius: '50%'
-                              }}
-                              onError={(e) => {
-                                // Fallback to default icon if URL fails
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.parentElement!.innerHTML = `<svg style="color: warning.main; font-size: 1.5rem;"><use href="#content-icon"></use></svg>`;
-                              }}
-                            />
-                          </Avatar>
-                        ) : (item as any).icon ? (
-                          <Box sx={{ fontSize: '1.5rem' }}>
-                            {getIconEmoji((item as any).icon)}
-                          </Box>
-                        ) : (
-                          <ContentIcon sx={{ color: 'warning.main', fontSize: '1.5rem' }} />
-                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {renderIconPreview(item.icon)}
+                          {!item.icon && (
+                            <ContentIcon sx={{ color: 'warning.main', fontSize: '1.5rem' }} />
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Chip 
@@ -997,6 +846,21 @@ const ContentManagement: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: '50%',
+                              backgroundColor: item.colorHex || '#f5f5f5',
+                              border: '1px solid',
+                              borderColor: 'divider',
+                            }}
+                          />
+                          <Typography variant="body2">{item.colorHex || 'No color'}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
                         <Chip 
                           label={item.content ? 'Yes' : 'No'} 
                           size="small" 
@@ -1013,7 +877,7 @@ const ContentManagement: React.FC = () => {
                   ))}
                   {content.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} align="center">
+                      <TableCell colSpan={7} align="center">
                         <Typography color="text.secondary">
                           {hasActiveContentFilters ? 'No content matches your filters.' : 'No content yet. Create your first content item!'}
                         </Typography>
@@ -1033,12 +897,7 @@ const ContentManagement: React.FC = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItemComponent onClick={() => { 
-          // Determine item type based on active tab when edit is triggered
-          const itemType = activeTab === 0 ? 'category' : activeTab === 1 ? 'topic' : 'content';
-          handleEdit(selectedItem!, itemType); 
-          handleMenuClose(); 
-        }}>
+        <MenuItemComponent onClick={() => { handleEdit(selectedItem!); handleMenuClose(); }}>
           <EditIcon sx={{ mr: 1 }} /> Edit
         </MenuItemComponent>
         <MenuItemComponent 
@@ -1062,302 +921,76 @@ const ContentManagement: React.FC = () => {
               required
             />
 
-            {(editingItemType === 'category' || editingItemType === 'topic' || editingItemType === 'content') && (
-              <Card variant="outlined" sx={{ p: 3, backgroundColor: 'grey.50' }}>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <ImageIcon />
-                  Icon Selection
-                </Typography>
-                
-                {/* Icon Type Selection */}
-                <FormControl component="fieldset" sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Icon Source
-                  </Typography>
-                  <RadioGroup
-                    row
-                    value={formData.iconType}
-                    onChange={(e) => {
-                      const newType = e.target.value;
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        iconType: newType,
-                        // Clear the other field when switching
-                        icon: newType === 'predefined' ? prev.icon : '',
-                        iconUrl: newType === 'url' ? prev.iconUrl : ''
-                      }));
-                      if (newType === 'predefined') {
-                        setIconUrlPreview(null);
-                        setIconUrlError(null);
-                      }
-                    }}
-                  >
-                    <FormControlLabel 
-                      value="predefined" 
-                      control={<Radio />} 
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <PaletteIcon fontSize="small" />
-                          Predefined Icon
-                        </Box>
-                      }
-                    />
-                    <FormControlLabel 
-                      value="url" 
-                      control={<Radio />} 
-                      label={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LinkIcon fontSize="small" />
-                          Custom URL
-                        </Box>
-                      }
-                    />
-                  </RadioGroup>
-                </FormControl>
-
-                {/* Predefined Icon Selection */}
-                {formData.iconType === 'predefined' && (
-                  <FormControl fullWidth sx={{ mb: 3 }}>
-                    <InputLabel>Select Icon</InputLabel>
-                    <Select
-                      value={formData.icon}
-                      onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                      label="Select Icon"
-                    >
-                      <MenuItem value="">
-                        <em>No Icon</em>
-                      </MenuItem>
-                      {/* Subject Icons */}
-                      <MenuItem value="ic_math">📐 Mathematics</MenuItem>
-                      <MenuItem value="ic_science">🔬 Science</MenuItem>
-                      <MenuItem value="ic_history">📚 History</MenuItem>
-                      <MenuItem value="ic_geography">🌍 Geography</MenuItem>
-                      <MenuItem value="ic_english">📝 English</MenuItem>
-                      <MenuItem value="ic_physics">⚛️ Physics</MenuItem>
-                      <MenuItem value="ic_chemistry">🧪 Chemistry</MenuItem>
-                      <MenuItem value="ic_biology">🧬 Biology</MenuItem>
-                      <MenuItem value="ic_computer">💻 Computer Science</MenuItem>
-                      <MenuItem value="ic_art">🎨 Art</MenuItem>
-                      <MenuItem value="ic_music">🎵 Music</MenuItem>
-                      <MenuItem value="ic_sports">⚽ Sports</MenuItem>
-                      <MenuItem value="ic_language">🌐 Languages</MenuItem>
-                      <MenuItem value="ic_economics">💰 Economics</MenuItem>
-                      <MenuItem value="ic_philosophy">🤔 Philosophy</MenuItem>
-                      <MenuItem value="ic_psychology">🧠 Psychology</MenuItem>
-                      <MenuItem value="ic_literature">📖 Literature</MenuItem>
-                      <MenuItem value="ic_engineering">⚙️ Engineering</MenuItem>
-                      <MenuItem value="ic_medicine">⚕️ Medicine</MenuItem>
-                      <MenuItem value="ic_law">⚖️ Law</MenuItem>
-                      {/* Content-specific Icons */}
-                      {editingItemType === 'content' && (
-                        <>
-                          <MenuItem value="ic_lesson">📖 Lesson</MenuItem>
-                          <MenuItem value="ic_experiment">🧪 Experiment</MenuItem>
-                          <MenuItem value="ic_theory">📋 Theory</MenuItem>
-                          <MenuItem value="ic_practice">✍️ Practice</MenuItem>
-                          <MenuItem value="ic_video">🎥 Video</MenuItem>
-                          <MenuItem value="ic_audio">🎧 Audio</MenuItem>
-                          <MenuItem value="ic_document">📄 Document</MenuItem>
-                          <MenuItem value="ic_worksheet">📝 Worksheet</MenuItem>
-                          <MenuItem value="ic_quiz">❓ Quiz</MenuItem>
-                          <MenuItem value="ic_assignment">📌 Assignment</MenuItem>
-                          <MenuItem value="ic_research">🔍 Research</MenuItem>
-                          <MenuItem value="ic_presentation">📊 Presentation</MenuItem>
-                          <MenuItem value="ic_tutorial">🎯 Tutorial</MenuItem>
-                          <MenuItem value="ic_guide">🗺️ Guide</MenuItem>
-                          <MenuItem value="ic_example">💡 Example</MenuItem>
-                          <MenuItem value="ic_solution">✅ Solution</MenuItem>
-                          <MenuItem value="ic_formula">🔢 Formula</MenuItem>
-                          <MenuItem value="ic_diagram">📐 Diagram</MenuItem>
-                          <MenuItem value="ic_chart">📈 Chart</MenuItem>
-                          <MenuItem value="ic_table">📊 Table</MenuItem>
-                        </>
-                      )}
-                    </Select>
-                  </FormControl>
-                )}
-
-                {/* Custom URL Input */}
-                {formData.iconType === 'url' && (
-                  <Box sx={{ mb: 3 }}>
-                    <TextField
-                      fullWidth
-                      label="Icon URL"
-                      placeholder="https://example.com/icon.png or https://cdn.iconscout.com/..."
-                      value={formData.iconUrl}
-                      onChange={(e) => {
-                        const url = e.target.value;
-                        setFormData(prev => ({ ...prev, iconUrl: url }));
-                        
-                        // Debounce URL validation
-                        if (url) {
-                          setTimeout(() => {
-                            if (formData.iconUrl === url) {
-                              loadIconPreview(url);
-                            }
-                          }, 500);
-                        } else {
-                          setIconUrlPreview(null);
-                          setIconUrlError(null);
-                        }
-                      }}
-                      error={Boolean(iconUrlError)}
-                      helperText={iconUrlError || 'Enter a direct link to an image file (PNG, JPG, SVG, WebP)'}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LinkIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                    
-                    {/* URL Examples */}
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Example URLs:</strong>
-                      </Typography>
-                      <Box sx={{ ml: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                          • https://img.icons8.com/color/48/000000/physics.png
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                          • https://cdn.iconscout.com/icon/free/png-256/mathematics-1674925-1425228.png
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                          • https://cdn.jsdelivr.net/gh/PKief/vscode-material-icon-theme@main/icons/science.svg
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                )}
-
-                {/* Icon Preview */}
-                <Box sx={{ 
-                  p: 2, 
-                  border: '1px solid', 
-                  borderColor: 'divider', 
-                  borderRadius: 2, 
-                  backgroundColor: 'background.paper' 
-                }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
-                    Preview:
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {formData.iconType === 'predefined' && formData.icon ? (
-                      <>
-                        <Avatar sx={{ 
-                          bgcolor: formData.colorHex, 
-                          width: 48, 
-                          height: 48,
-                          fontSize: '1.5rem'
-                        }}>
-                          {getIconEmoji(formData.icon)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" fontWeight={600}>
-                            {formData.title || (editingItemType === 'category' ? 'Category Title' : editingItemType === 'topic' ? 'Topic Title' : 'Content Title')}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Predefined: {formData.icon}
-                          </Typography>
-                        </Box>
-                      </>
-                    ) : formData.iconType === 'url' && iconUrlPreview ? (
-                      <>
-                        <Avatar sx={{ 
-                          bgcolor: 'transparent', 
-                          width: 48, 
-                          height: 48,
-                          border: '1px solid',
-                          borderColor: 'divider'
-                        }}>
-                          <img 
-                            src={iconUrlPreview} 
-                            alt="Icon preview"
-                            style={{ 
-                              width: '100%', 
-                              height: '100%', 
-                              objectFit: 'contain',
-                              borderRadius: '50%'
-                            }}
-                            onError={() => {
-                              setIconUrlPreview(null);
-                              setIconUrlError('Failed to load image');
-                            }}
-                          />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" fontWeight={600}>
-                            {formData.title || (editingItemType === 'category' ? 'Category Title' : editingItemType === 'topic' ? 'Topic Title' : 'Content Title')}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Custom URL: {iconUrlLoading ? 'Loading...' : 'Loaded successfully'}
-                          </Typography>
-                        </Box>
-                      </>
-                    ) : formData.iconType === 'url' && iconUrlError ? (
-                      <>
-                        <Avatar sx={{ 
-                          bgcolor: 'error.light', 
-                          width: 48, 
-                          height: 48,
-                          color: 'error.main'
-                        }}>
-                          <BrokenImageIcon />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" color="error.main" fontWeight={600}>
-                            Failed to load icon
-                          </Typography>
-                          <Typography variant="body2" color="error.main">
-                            {iconUrlError}
-                          </Typography>
-                        </Box>
-                      </>
-                    ) : formData.iconType === 'url' && iconUrlLoading ? (
-                      <>
-                        <Avatar sx={{ 
-                          bgcolor: 'grey.200', 
-                          width: 48, 
-                          height: 48 
-                        }}>
-                          <CircularProgress size={24} />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" fontWeight={600}>
-                            Loading icon...
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Testing URL accessibility
-                          </Typography>
-                        </Box>
-                      </>
-                    ) : (
-                      <>
-                        <Avatar sx={{ 
-                          bgcolor: formData.colorHex, 
-                          width: 48, 
-                          height: 48 
-                        }}>
-                          <CategoryIcon />
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body1" fontWeight={600}>
-                            {formData.title || (editingItemType === 'category' ? 'Category Title' : editingItemType === 'topic' ? 'Topic Title' : 'Content Title')}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            No icon selected
-                          </Typography>
-                        </Box>
-                      </>
-                    )}
-                  </Box>
+            {/* Icon URL/Resource Input - For Categories, Topics, and Content */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                🖼️ Icon URL/Resource
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <Box sx={{ minWidth: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {renderIconPreview(formData.icon)}
                 </Box>
-              </Card>
-            )}
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Icon URL or Resource Name"
+                  value={formData.icon}
+                  onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
+                  placeholder="Enter image URL (https://...) or resource name (ic_science)"
+                  InputProps={{
+                    style: { fontFamily: 'monospace' }
+                  }}
+                />
+              </Box>
+              
+              {/* Icon validation and helper text */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                {formData.icon && isValidUrl(formData.icon) && (
+                  <Chip 
+                    label="✅ Valid URL" 
+                    size="small" 
+                    color="success" 
+                    variant="outlined"
+                  />
+                )}
+                {formData.icon && !isValidUrl(formData.icon) && formData.icon.startsWith('ic_') && (
+                  <Chip 
+                    label="📱 Resource Name" 
+                    size="small" 
+                    color="info" 
+                    variant="outlined"
+                  />
+                )}
+                {formData.icon && !isValidUrl(formData.icon) && !formData.icon.startsWith('ic_') && (
+                  <Chip 
+                    label="⚠️ Invalid format" 
+                    size="small" 
+                    color="warning" 
+                    variant="outlined"
+                  />
+                )}
+              </Box>
 
-            {editingItemType === 'topic' && (
+              {/* Common resource name examples */}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ width: '100%', mb: 1 }}>
+                  Common resource names:
+                </Typography>
+                {['ic_science', 'ic_math', 'ic_history', 'ic_english', 'ic_computer'].map((resource) => (
+                  <Chip
+                    key={resource}
+                    label={resource}
+                    size="small"
+                    variant="outlined"
+                    clickable
+                    onClick={() => setFormData(prev => ({ ...prev, icon: resource }))}
+                    sx={{ fontSize: '0.75rem' }}
+                  />
+                ))}
+              </Box>
+            </Box>
+
+            {activeTab === 1 && (
               <FormControl fullWidth required>
                 <InputLabel>Category</InputLabel>
                 <Select
@@ -1374,7 +1007,7 @@ const ContentManagement: React.FC = () => {
               </FormControl>
             )}
 
-            {editingItemType === 'content' && (
+            {activeTab === 2 && (
               <>
                 <FormControl fullWidth required>
                   <InputLabel>Category</InputLabel>
@@ -1413,47 +1046,46 @@ const ContentManagement: React.FC = () => {
               </>
             )}
 
-            {(editingItemType === 'category' || editingItemType === 'topic') && (
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  🎨 Color
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                  <input
-                    type="color"
-                    value={formData.colorHex}
-                    onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
-                    style={{ 
-                      width: 50, 
-                      height: 40, 
-                      border: 'none', 
-                      borderRadius: 8, 
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                  />
-                  <TextField
-                    size="small"
-                    label="Hex Color"
-                    value={formData.colorHex}
-                    onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
-                    sx={{ flexGrow: 1 }}
-                    InputProps={{
-                      style: { fontFamily: 'monospace' }
-                    }}
-                  />
-                </Box>
-                <Box sx={{ 
-                  width: '100%', 
-                  height: 20, 
-                  backgroundColor: formData.colorHex,
-                  borderRadius: 1,
-                  border: '1px solid #E5E7EB'
-                }} />
+            {/* Color Picker - For Categories, Topics, and Content */}
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                🎨 Color
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                <input
+                  type="color"
+                  value={formData.colorHex}
+                  onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                  style={{ 
+                    width: 50, 
+                    height: 40, 
+                    border: 'none', 
+                    borderRadius: 8, 
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                />
+                <TextField
+                  size="small"
+                  label="Hex Color"
+                  value={formData.colorHex}
+                  onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+                  sx={{ flexGrow: 1 }}
+                  InputProps={{
+                    style: { fontFamily: 'monospace' }
+                  }}
+                />
               </Box>
-            )}
+              <Box sx={{ 
+                width: '100%', 
+                height: 20, 
+                backgroundColor: formData.colorHex,
+                borderRadius: 1,
+                border: '1px solid #E5E7EB'
+              }} />
+            </Box>
 
-            {editingItemType === 'content' && (
+            {activeTab === 2 && (
               <Box>
                 <Typography variant="subtitle2" gutterBottom>
                   Content
@@ -1468,7 +1100,7 @@ const ContentManagement: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setDialogOpen(false); setEditingItemType(null); }}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleSave}>
             {editMode === 'create' ? 'Create' : 'Update'}
           </Button>

@@ -184,6 +184,7 @@ export class ContentService {
           id: doc.id,
           title: data.title,
           content: data.content,
+          icon: data.icon,
           colorHex: data.colorHex,
           order: data.order || 0,
           parentId,
@@ -305,9 +306,20 @@ export class ContentService {
       const uniqueId = await this.generateUniqueId(data.title, collectionPath);
       
       // Create document with custom ID
-      const docRef = collectionPath.length === 3 
-        ? doc(db, collectionPath[0], collectionPath[1], collectionPath[2], uniqueId)
-        : doc(db, collectionPath[0], uniqueId);
+      let docRef;
+      if (collectionPath.length === 3) {
+        // Creating under a category: learning_data/categoryId/children/topicId
+        docRef = doc(db, collectionPath[0], collectionPath[1], collectionPath[2], uniqueId);
+      } else if (collectionPath.length === 5) {
+        // Creating under a topic: learning_data/categoryId/children/topicId/children/contentId
+        docRef = doc(db, collectionPath[0], collectionPath[1], collectionPath[2], collectionPath[3], collectionPath[4], uniqueId);
+      } else {
+        console.error('❌ Invalid collection path length:', collectionPath.length, collectionPath);
+        throw new Error(`Invalid collection path length: ${collectionPath.length}. Expected 3 or 5.`);
+      }
+      
+
+      
       await setDoc(docRef, {
         ...data,
         order: data.order || 0,
@@ -336,11 +348,21 @@ export class ContentService {
       if (nodePath && nodePath.length > 0) {
         // Use the provided node path (should be a document path with even number of segments)
         fullPath = nodePath;
-        docRef = nodePath.length === 2 
-          ? doc(db, nodePath[0], nodePath[1])
-          : nodePath.length === 4
-          ? doc(db, nodePath[0], nodePath[1], nodePath[2], nodePath[3])
-          : doc(db, nodePath[0], nodePath[1]);
+        
+        if (nodePath.length === 2) {
+          // Category: learning_data/categoryId
+          docRef = doc(db, nodePath[0], nodePath[1]);
+        } else if (nodePath.length === 4) {
+          // Topic: learning_data/categoryId/children/topicId
+          docRef = doc(db, nodePath[0], nodePath[1], nodePath[2], nodePath[3]);
+        } else if (nodePath.length === 6) {
+          // Content: learning_data/categoryId/children/topicId/children/contentId
+          docRef = doc(db, nodePath[0], nodePath[1], nodePath[2], nodePath[3], nodePath[4], nodePath[5]);
+        } else {
+          console.error('❌ Invalid node path length:', nodePath.length, nodePath);
+          throw new Error(`Invalid node path length: ${nodePath.length}. Expected 2, 4, or 6.`);
+        }
+        
         console.log('📁 Using provided path:', fullPath);
       } else {
         // Fallback to root category path
