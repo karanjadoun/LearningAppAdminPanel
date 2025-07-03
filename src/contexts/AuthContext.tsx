@@ -8,6 +8,13 @@ import {
 import { auth, googleProvider } from '../config/firebase';
 import { AuthContextType, User } from '../types';
 
+// Add your allowed admin emails here
+const ALLOWED_ADMIN_EMAILS = [
+  // Add your email addresses here
+  'karanjadoun2000@gmail.com', // Replace with your actual email
+  'karanjadoun2018@gmail.com',     // Add more emails as needed
+];
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -28,15 +35,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        const user: User = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email!,
-          displayName: firebaseUser.displayName || undefined,
-          photoURL: firebaseUser.photoURL || undefined,
-          isAdmin: true, // For now, all authenticated users are admins
-        };
-        setUser(user);
+      if (firebaseUser && firebaseUser.email) {
+        // Check if the user's email is in the allowed admin list
+        const isAdmin = ALLOWED_ADMIN_EMAILS.includes(firebaseUser.email.toLowerCase());
+        
+        if (isAdmin) {
+          const user: User = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName || undefined,
+            photoURL: firebaseUser.photoURL || undefined,
+            isAdmin: true,
+          };
+          setUser(user);
+        } else {
+          // User is not an admin, sign them out
+          firebaseSignOut(auth);
+          setUser(null);
+          alert('Access denied. This admin panel is restricted to authorized users only.');
+        }
       } else {
         setUser(null);
       }

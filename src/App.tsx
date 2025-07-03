@@ -476,17 +476,17 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <SetupProvider>
-          <AppConfigProvider>
-            <AuthProvider>
+        <AuthProvider>
+          <SetupProvider>
+            <AppConfigProvider>
               <SearchProvider>
                 <Router>
                   <AuthenticatedApp />
                 </Router>
               </SearchProvider>
-            </AuthProvider>
-          </AppConfigProvider>
-        </SetupProvider>
+            </AppConfigProvider>
+          </SetupProvider>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
