@@ -493,8 +493,8 @@ const ContentManagement: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {renderIconPreview(category.icon)}
                         {!category.icon && (
-                          <CategoryIcon sx={{ color: category.colorHex, fontSize: '1.5rem' }} />
-                        )}
+                        <CategoryIcon sx={{ color: category.colorHex, fontSize: '1.5rem' }} />
+                      )}
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -649,8 +649,8 @@ const ContentManagement: React.FC = () => {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {renderIconPreview(topic.icon)}
                           {!topic.icon && (
-                            <TopicIcon sx={{ color: topic.colorHex || 'primary.main', fontSize: '1.5rem' }} />
-                          )}
+                          <TopicIcon sx={{ color: topic.colorHex || 'primary.main', fontSize: '1.5rem' }} />
+                        )}
                         </Box>
                       </TableCell>
                       <TableCell>
@@ -819,7 +819,7 @@ const ContentManagement: React.FC = () => {
                   {content.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
-                        <Typography>{item.title}</Typography>
+                          <Typography>{item.title}</Typography>
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1053,9 +1053,9 @@ const ContentManagement: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                 <input
-                  type="color"
-                  value={formData.colorHex}
-                  onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
+              type="color"
+              value={formData.colorHex}
+              onChange={(e) => setFormData(prev => ({ ...prev, colorHex: e.target.value }))}
                   style={{ 
                     width: 50, 
                     height: 40, 

@@ -419,11 +419,11 @@ const AppContent: React.FC = () => {
 
 // Authentication wrapper component
 const AuthenticatedApp: React.FC = () => {
-  const { user, loading } = useAuth();
-  const { setupState } = useSetup();
+  const { user, loading: authLoading } = useAuth();
+  const { setupState, loading: setupLoading } = useSetup();
 
-  // Show loading spinner while checking authentication
-  if (loading) {
+  // Show loading spinner while checking authentication or setup status
+  if (authLoading || setupLoading) {
     return (
       <Box 
         sx={{ 
@@ -451,7 +451,7 @@ const AuthenticatedApp: React.FC = () => {
             textAlign: 'center',
           }}
         >
-          Loading your admin panel...
+          {authLoading ? 'Loading your admin panel...' : 'Checking setup status...'}
         </Typography>
       </Box>
     );
@@ -477,15 +477,15 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <SetupProvider>
-            <AppConfigProvider>
+        <SetupProvider>
+          <AppConfigProvider>
               <SearchProvider>
                 <Router>
                   <AuthenticatedApp />
                 </Router>
               </SearchProvider>
-            </AppConfigProvider>
-          </SetupProvider>
+          </AppConfigProvider>
+        </SetupProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

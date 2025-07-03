@@ -3,6 +3,8 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useAuth } from './AuthContext';
+// Import the main Firebase db instance
+import { db } from '../config/firebase';
 
 interface FirebaseConfig {
   apiKey: string;
@@ -27,6 +29,7 @@ interface SetupState {
 
 interface SetupContextType {
   setupState: SetupState;
+  loading: boolean;
   updateSetupState: (updates: Partial<SetupState>) => void;
   completeSetup: () => void;
   resetSetup: () => void;
@@ -58,100 +61,72 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
     return email.replace(/[/.#$[\]]/g, '_');
   };
 
-  // Load setup state from both localStorage and Firebase
+  // Load setup state using the main Firebase instance
   useEffect(() => {
     const loadSetupState = async () => {
       try {
-        // First, try to load Firebase config from localStorage
-        const savedFirebaseConfig = localStorage.getItem('firebaseConfig');
-        if (savedFirebaseConfig) {
-          const firebaseConfig = JSON.parse(savedFirebaseConfig);
+        console.log('🔄 SetupContext: Starting setup check, user:', user?.email);
+        
+        // Wait for user to be available
+        if (!user?.email) {
+          console.log('👤 SetupContext: No user available, waiting...');
+          setSetupState(defaultSetupState);
+          setLoading(false);
+          return;
+        }
+
+        console.log('🔍 SetupContext: Checking setup status for user:', user.email);
+        
+        const emailDocId = getEmailDocId(user.email);
+        const userSetupDoc = await getDoc(doc(db, 'admin_users', emailDocId, 'setup', 'status'));
+        
+        if (userSetupDoc.exists()) {
+          const userSetupData = userSetupDoc.data();
+          console.log('✅ SetupContext: User setup status found:', userSetupData);
           
-          // Initialize Firebase with the saved config
-          try {
-            const app = initializeApp(firebaseConfig, 'setup-check-app');
-            const db = getFirestore(app);
-            
-            // If user is authenticated, check their specific setup status
-            if (user?.email) {
-              const emailDocId = getEmailDocId(user.email);
-              const userSetupDoc = await getDoc(doc(db, 'admin_users', emailDocId, 'setup', 'status'));
-              
-              if (userSetupDoc.exists()) {
-                const userSetupData = userSetupDoc.data();
-                setSetupState({
-                  ...defaultSetupState,
-                  isSetupComplete: userSetupData.isSetupComplete || false,
-                  isFirstTime: !userSetupData.isSetupComplete,
-                  firebaseConfig,
-                  adminUser: {
-                    email: user.email,
-                    displayName: user.displayName || user.email,
-                  }
-                });
-              } else {
-                // User hasn't completed setup yet
-                setSetupState({
-                  ...defaultSetupState,
-                  firebaseConfig,
-                  adminUser: {
-                    email: user.email,
-                    displayName: user.displayName || user.email,
-                  }
-                });
-              }
-            } else {
-              // No authenticated user, check for global setup (backward compatibility)
-              const globalSetupDoc = await getDoc(doc(db, 'admin_setup', 'status'));
-              if (globalSetupDoc.exists()) {
-                const globalSetupData = globalSetupDoc.data();
-                setSetupState({
-                  ...defaultSetupState,
-                  isSetupComplete: globalSetupData.isSetupComplete || false,
-                  isFirstTime: !globalSetupData.isSetupComplete,
-                  firebaseConfig,
-                });
-              } else {
-                // Firebase config exists but no setup doc - partial setup
-                setSetupState({
-                  ...defaultSetupState,
-                  firebaseConfig,
-                });
-              }
+          const newState = {
+            ...defaultSetupState,
+            isSetupComplete: userSetupData.isSetupComplete || false,
+            isFirstTime: !userSetupData.isSetupComplete,
+            adminUser: {
+              email: user.email,
+              displayName: user.displayName || user.email,
             }
-          } catch (firebaseError) {
-            console.error('Firebase initialization failed:', firebaseError);
-            // Fall back to localStorage only
-            const savedSetup = localStorage.getItem('adminPanelSetup');
-            if (savedSetup) {
-              const parsed = JSON.parse(savedSetup);
-              setSetupState({ ...defaultSetupState, ...parsed });
-            }
-          }
+          };
+          
+          console.log('📋 SetupContext: Setting new state:', newState);
+          setSetupState(newState);
         } else {
-          // No Firebase config, check localStorage for partial setup
-          const savedSetup = localStorage.getItem('adminPanelSetup');
-          if (savedSetup) {
-            const parsed = JSON.parse(savedSetup);
-            setSetupState({ ...defaultSetupState, ...parsed });
-          }
+          console.log('📝 SetupContext: No setup status found for user, setup required');
+          // User hasn't completed setup yet
+          const newState = {
+            ...defaultSetupState,
+            adminUser: {
+              email: user.email,
+              displayName: user.displayName || user.email,
+            }
+          };
+          
+          console.log('📋 SetupContext: Setting new state (no setup):', newState);
+          setSetupState(newState);
         }
       } catch (error) {
-        console.error('Error loading setup state:', error);
+        console.error('❌ SetupContext: Error loading setup state:', error);
+        // On error, assume setup is needed
+        setSetupState(defaultSetupState);
       } finally {
+        console.log('🏁 SetupContext: Setup check complete, setting loading to false');
         setLoading(false);
       }
     };
 
-    loadSetupState();
-  }, [user]); // Re-run when user changes
-
-  // Save setup state to localStorage for current session
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem('adminPanelSetup', JSON.stringify(setupState));
+    // Only run setup check if we have authentication info
+    if (user !== undefined) {
+      console.log('🚀 SetupContext: User state changed, running setup check');
+      setLoading(true);
+      loadSetupState();
     }
-  }, [setupState, loading]);
+  }, [user]); // Re-run when user changes
 
   const updateSetupState = (updates: Partial<SetupState>) => {
     setSetupState(prev => ({ ...prev, ...updates }));
@@ -167,47 +142,49 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
       
       setSetupState(updatedState);
 
-      // Save completion status to Firebase if config is available
-      if (setupState.firebaseConfig) {
+      // Save completion status to Firebase using the main db instance
+      if (user?.email) {
         try {
-          const app = initializeApp(setupState.firebaseConfig, 'setup-complete-app');
-          const db = getFirestore(app);
+          const emailDocId = getEmailDocId(user.email);
+          await setDoc(doc(db, 'admin_users', emailDocId, 'setup', 'status'), {
+            isSetupComplete: true,
+            completedAt: new Date().toISOString(),
+            completedBy: user.email,
+            version: '1.0.0'
+          });
           
-          if (user?.email) {
-            // Save user-specific setup completion
-            const emailDocId = getEmailDocId(user.email);
-            await setDoc(doc(db, 'admin_users', emailDocId, 'setup', 'status'), {
-              isSetupComplete: true,
-              completedAt: new Date().toISOString(),
-              completedBy: user.email,
-              version: '1.0.0'
-            });
-            
-            console.log(`Setup completion saved for user: ${user.email}`);
-          } else {
-            // Fallback to global setup (should not happen with new auth flow)
-            await setDoc(doc(db, 'admin_setup', 'status'), {
-              isSetupComplete: true,
-              completedAt: new Date().toISOString(),
-              version: '1.0.0'
-            });
-            
-            console.log('Setup completion saved globally');
-          }
+          console.log(`✅ Setup completion saved for user: ${user.email}`);
         } catch (firebaseError) {
-          console.error('Failed to save setup status to Firebase:', firebaseError);
+          console.error('❌ Failed to save setup status to Firebase:', firebaseError);
         }
       }
     } catch (error) {
-      console.error('Error completing setup:', error);
+      console.error('❌ Error completing setup:', error);
     }
   };
 
-  const resetSetup = () => {
-    setSetupState(defaultSetupState);
-    localStorage.removeItem('adminPanelSetup');
-    localStorage.removeItem('appConfig');
-    localStorage.removeItem('firebaseConfig');
+  const resetSetup = async () => {
+    try {
+      setSetupState(defaultSetupState);
+      
+      // Also remove setup status from Firebase
+      if (user?.email) {
+        const emailDocId = getEmailDocId(user.email);
+        await setDoc(doc(db, 'admin_users', emailDocId, 'setup', 'status'), {
+          isSetupComplete: false,
+          resetAt: new Date().toISOString(),
+          resetBy: user.email,
+        });
+        console.log('🔄 Setup status reset for user:', user.email);
+      }
+      
+      // Clear localStorage items
+      localStorage.removeItem('adminPanelSetup');
+      localStorage.removeItem('appConfig');
+      localStorage.removeItem('firebaseConfig');
+    } catch (error) {
+      console.error('❌ Error resetting setup:', error);
+    }
   };
 
   const saveFirebaseConfig = (config: FirebaseConfig) => {
@@ -216,7 +193,7 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
       firebaseConfig: config,
     }));
     
-    // Also save to separate localStorage for firebase initialization
+    // Save to localStorage for setup wizard reference
     localStorage.setItem('firebaseConfig', JSON.stringify(config));
   };
 
@@ -236,10 +213,10 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
       // Test actual Firebase connection
       try {
         const app = initializeApp(config, 'test-app');
-        const db = getFirestore(app);
+        const testDb = getFirestore(app);
         
         // Try to read a test document to verify connection
-        await getDoc(doc(db, 'test', 'connection'));
+        await getDoc(doc(testDb, 'test', 'connection'));
         
         // If we get here, connection is working
         return true;
@@ -253,45 +230,11 @@ export const SetupProvider: React.FC<SetupProviderProps> = ({ children }) => {
     }
   };
 
-  // Don't render children until setup state is loaded
-  if (loading) {
-    return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '100vh',
-          backgroundColor: '#F8FAFC',
-        }}
-      >
-        <CircularProgress 
-          size={48} 
-          thickness={4}
-          sx={{
-            color: '#3B82F6',
-          }}
-        />
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            mt: 3,
-            color: '#374151',
-            fontWeight: 600,
-            textAlign: 'center',
-          }}
-        >
-          Checking setup status...
-        </Typography>
-      </Box>
-    );
-  }
-
   return (
     <SetupContext.Provider 
       value={{
         setupState,
+        loading,
         updateSetupState,
         completeSetup,
         resetSetup,
