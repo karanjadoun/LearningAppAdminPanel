@@ -88,7 +88,7 @@ interface AppSettings {
   privacyPolicyUrl: string;
   aboutDeveloperText: string;
   shareAppText: string;
-  rateAppText: string;
+  rateAppUrl: string;
   moreAppsUrl: string;
   
   lastUpdated?: string;
@@ -141,7 +141,7 @@ const defaultSettings: AppSettings = {
   privacyPolicyUrl: 'https://sites.google.com/view/privacypolicy-awesomeeducation',
   aboutDeveloperText: 'Developed by Karan Singh Jadoun',
   shareAppText: 'Check out this amazing study app! %1$s',
-  rateAppText: 'If you enjoy using this app, please rate us!',
+  rateAppUrl: 'https://play.google.com/store/apps/details?id=com.yourcompany.yourapp',
   moreAppsUrl: 'https://play.google.com/store/apps/developer?id=YourDeveloperName',
 };
 
@@ -1419,15 +1419,14 @@ const AppSettings: React.FC = () => {
                     helperText="Use %1$s for Play Store URL placeholder"
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
-                    label="Rate App Message"
-                    value={settings.rateAppText}
-                    onChange={handleInputChange('rateAppText')}
+                    label="Rate App URL"
+                    value={settings.rateAppUrl}
+                    onChange={handleInputChange('rateAppUrl')}
                     required
-                    multiline
-                    rows={2}
+                    type="url"
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -1435,7 +1434,8 @@ const AppSettings: React.FC = () => {
                         </InputAdornment>
                       ),
                     }}
-                    helperText="Message shown when asking users to rate your app"
+                    helperText="Direct Play Store link to your app (e.g., https://play.google.com/store/apps/details?id=com.yourcompany.yourapp)"
+                    error={Boolean(settings.rateAppUrl && !isValidUrl(settings.rateAppUrl))}
                   />
                 </Grid>
               </Grid>
