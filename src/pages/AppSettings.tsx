@@ -17,6 +17,10 @@ import {
   Switch,
   FormControlLabel,
   FormGroup,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -37,6 +41,7 @@ import {
   Security as SecurityIcon,
   LockOpen as LockOpenIcon,
   Lock as LockIcon,
+  ViewModule as ViewModuleIcon,
 } from '@mui/icons-material';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -91,6 +96,11 @@ interface AppSettings {
   rateAppUrl: string;
   moreAppsUrl: string;
   
+  // Card Layout Settings
+  homeCardLayout: string;
+  categoryCardLayout: string;
+  nodeCardLayout: string;
+  
   lastUpdated?: string;
 }
 
@@ -143,6 +153,11 @@ const defaultSettings: AppSettings = {
   shareAppText: 'Check out this amazing study app! %1$s',
   rateAppUrl: 'https://play.google.com/store/apps/details?id=com.yourcompany.yourapp',
   moreAppsUrl: 'https://play.google.com/store/apps/developer?id=YourDeveloperName',
+  
+  // Card Layout Settings
+  homeCardLayout: 'grid',
+  categoryCardLayout: 'grid',
+  nodeCardLayout: 'list',
 };
 
 const AppSettings: React.FC = () => {
@@ -256,6 +271,15 @@ const AppSettings: React.FC = () => {
     setSettings(prev => ({
       ...prev,
       [field]: event.target.checked,
+    }));
+  };
+
+  const handleSelectChange = (field: keyof AppSettings) => (
+    event: any
+  ) => {
+    setSettings(prev => ({
+      ...prev,
+      [field]: event.target.value,
     }));
   };
 
@@ -463,6 +487,79 @@ const AppSettings: React.FC = () => {
                     required
                     helperText="Title for the categories section"
                   />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Card Layout Settings */}
+        <Grid item xs={12}>
+          <Card>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <ViewModuleIcon color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  Card Layout Settings
+                </Typography>
+              </Box>
+              
+              <Alert severity="info" sx={{ mb: 3 }}>
+                <Typography variant="body2">
+                  Control how content is displayed in different screens of your mobile app. Changes will be applied in real-time.
+                </Typography>
+              </Alert>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Home Screen Card Layout</InputLabel>
+                    <Select
+                      value={settings.homeCardLayout}
+                      label="Home Screen Card Layout"
+                      onChange={handleSelectChange('homeCardLayout')}
+                    >
+                      <MenuItem value="grid">Grid Layout</MenuItem>
+                      <MenuItem value="list">List Layout</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    How categories are displayed on the home screen
+                  </Typography>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Categories Screen Card Layout</InputLabel>
+                    <Select
+                      value={settings.categoryCardLayout}
+                      label="Categories Screen Card Layout"
+                      onChange={handleSelectChange('categoryCardLayout')}
+                    >
+                      <MenuItem value="grid">Grid Layout</MenuItem>
+                      <MenuItem value="list">List Layout</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    How topics are displayed in category screens
+                  </Typography>
+                </Grid>
+                
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Node Screen Card Layout</InputLabel>
+                    <Select
+                      value={settings.nodeCardLayout}
+                      label="Node Screen Card Layout"
+                      onChange={handleSelectChange('nodeCardLayout')}
+                    >
+                      <MenuItem value="grid">Grid Layout</MenuItem>
+                      <MenuItem value="list">List Layout</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    How content items are displayed in topic screens
+                  </Typography>
                 </Grid>
               </Grid>
             </CardContent>
