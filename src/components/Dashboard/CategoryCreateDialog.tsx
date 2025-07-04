@@ -13,6 +13,10 @@ import {
   Avatar,
   Alert,
   CircularProgress,
+  Slider,
+  Chip,
+  InputAdornment,
+  Card,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -35,28 +39,8 @@ interface CategoryCreateDialogProps {
   onSuccess: () => void;
 }
 
-const iconOptions = [
-  { name: 'School', icon: SchoolIcon, value: 'ic_school' },
-  { name: 'Science', icon: ScienceIcon, value: 'ic_science' },
-  { name: 'Math', icon: MathIcon, value: 'ic_math' },
-  { name: 'Language', icon: LanguageIcon, value: 'ic_language' },
-  { name: 'History', icon: HistoryIcon, value: 'ic_history' },
-  { name: 'Geography', icon: GeographyIcon, value: 'ic_geography' },
-  { name: 'Art', icon: ArtIcon, value: 'ic_art' },
-  { name: 'Sports', icon: SportsIcon, value: 'ic_sports' },
-  { name: 'Computer', icon: ComputerIcon, value: 'ic_computer' },
-  { name: 'Music', icon: MusicIcon, value: 'ic_music' },
-];
-
-const colorOptions = [
-  { name: 'Blue', value: '#2196f3' },
-  { name: 'Green', value: '#4caf50' },
-  { name: 'Orange', value: '#ff9800' },
-  { name: 'Red', value: '#f44336' },
-  { name: 'Purple', value: '#9c27b0' },
-  { name: 'Teal', value: '#009688' },
-  { name: 'Pink', value: '#e91e63' },
-  { name: 'Indigo', value: '#3f51b5' },
+const resourceSuggestions = [
+  'ic_science', 'ic_math', 'ic_history', 'ic_english', 'ic_computer'
 ];
 
 const CategoryCreateDialog: React.FC<CategoryCreateDialogProps> = ({
@@ -65,38 +49,41 @@ const CategoryCreateDialog: React.FC<CategoryCreateDialogProps> = ({
   onSuccess,
 }) => {
   const [title, setTitle] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState('ic_school');
-  const [selectedColor, setSelectedColor] = useState('#2196f3');
+  const [icon, setIcon] = useState('');
+  const [colorHex, setColorHex] = useState('#2196f3');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper functions
+  const isValidUrl = (string: string): boolean => {
+    try {
+      const url = new URL(string);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch (_) {
+      return false;
+    }
+  };
 
   const handleSubmit = async () => {
     if (!title.trim()) {
       setError('Please enter a category title');
       return;
     }
-
     setLoading(true);
     setError(null);
-
     try {
       const categoryData = {
         title: title.trim(),
-        icon: selectedIcon,
-        colorHex: selectedColor,
+        icon: icon.trim(),
+        colorHex: colorHex,
       };
-
       await contentService.createRootCategory(categoryData);
-      
-      // Reset form
       setTitle('');
-      setSelectedIcon('ic_school');
-      setSelectedColor('#2196f3');
-      
+      setIcon('');
+      setColorHex('#2196f3');
       onSuccess();
       onClose();
     } catch (error) {
-      console.error('Error creating category:', error);
       setError('Failed to create category. Please try again.');
     } finally {
       setLoading(false);
@@ -106,37 +93,64 @@ const CategoryCreateDialog: React.FC<CategoryCreateDialogProps> = ({
   const handleClose = () => {
     if (!loading) {
       setTitle('');
-      setSelectedIcon('ic_school');
-      setSelectedColor('#2196f3');
+      setIcon('');
+      setColorHex('#2196f3');
       setError(null);
       onClose();
     }
   };
 
+  // For color slider
+  const handleColorSlider = (e: any, value: any) => {
+    // value is a number (0-359 for hue)
+    const h = value;
+    const s = 80;
+    const l = 60;
+    setColorHex(`hsl(${h},${s}%,${l}%)`);
+  };
+  const getHue = (hex: string) => {
+    // Convert hex to hue for slider
+    const rgb = hex.length === 7 ? [
+      parseInt(hex.slice(1, 3), 16),
+      parseInt(hex.slice(3, 5), 16),
+      parseInt(hex.slice(5, 7), 16),
+    ] : [33, 150, 243];
+    const r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0;
+    if (max === min) h = 0;
+    else if (max === r) h = (60 * ((g - b) / (max - min)) + 360) % 360;
+    else if (max === g) h = (60 * ((b - r) / (max - min)) + 120) % 360;
+    else h = (60 * ((r - g) / (max - min)) + 240) % 360;
+    return Math.round(h);
+  };
+
+  // Preview rendering (emoji fallback)
+  const getIconEmoji = (iconName: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'ic_math': '📐',
+      'ic_science': '🔬',
+      'ic_history': '📚',
+      'ic_english': '📝',
+      'ic_computer': '💻',
+    };
+    return iconMap[iconName] || '📁';
+  };
+  const renderIconPreview = (icon: string) => {
+    if (!icon) return <Box sx={{ width: 24, height: 24, bgcolor: '#f5f5f5', borderRadius: 1 }}>?</Box>;
+    if (isValidUrl(icon)) {
+      return <img src={icon} alt="icon" style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', border: '1px solid #e0e0e0' }} />;
+    }
+    if (icon.startsWith('ic_')) return <span style={{ fontSize: 24 }}>{getIconEmoji(icon)}</span>;
+    return <span style={{ fontSize: 24 }}>?</span>;
+  };
+
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          maxHeight: '90vh',
-        },
-      }}
-    >
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          pb: 2,
-        }}
-      >
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3, maxHeight: '90vh' } }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 2 }}>
         <Box>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Create New Category
+            Create Category
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Add a new subject category to organize your content
@@ -146,153 +160,115 @@ const CategoryCreateDialog: React.FC<CategoryCreateDialogProps> = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-
       <DialogContent sx={{ pb: 2 }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-            {error}
-          </Alert>
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>
         )}
-
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-            Category Title
-          </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
             fullWidth
-            placeholder="e.g., Mathematics, Science, History"
+            label="Title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             disabled={loading}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-              },
-            }}
+            required
           />
-        </Box>
-
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-            Choose Icon
-          </Typography>
-          <Grid container spacing={1}>
-            {iconOptions.map((option) => (
-              <Grid item key={option.value}>
-                <IconButton
-                  onClick={() => setSelectedIcon(option.value)}
-                  disabled={loading}
-                  sx={{
-                    width: 60,
-                    height: 60,
-                    border: '2px solid',
-                    borderColor: selectedIcon === option.value ? 'primary.main' : 'grey.300',
-                    borderRadius: 2,
-                    backgroundColor: selectedIcon === option.value ? 'primary.light' : 'transparent',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      backgroundColor: 'primary.light',
-                    },
-                  }}
-                >
-                  <option.icon
-                    sx={{
-                      fontSize: 24,
-                      color: selectedIcon === option.value ? 'primary.main' : 'text.secondary',
-                    }}
-                  />
-                </IconButton>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
-            Choose Color
-          </Typography>
-          <Grid container spacing={1}>
-            {colorOptions.map((option) => (
-              <Grid item key={option.value}>
-                <IconButton
-                  onClick={() => setSelectedColor(option.value)}
-                  disabled={loading}
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    border: '3px solid',
-                    borderColor: selectedColor === option.value ? '#000' : 'transparent',
-                    borderRadius: '50%',
-                    backgroundColor: option.value,
-                    '&:hover': {
-                      transform: 'scale(1.1)',
-                    },
-                    transition: 'all 0.2s ease-in-out',
-                  }}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
-        {/* Preview */}
-        <Box
-          sx={{
-            mt: 3,
-            p: 3,
-            border: '1px solid',
-            borderColor: 'grey.300',
-            borderRadius: 2,
-            backgroundColor: 'grey.50',
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
-            Preview
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar
-              sx={{
-                backgroundColor: selectedColor,
-                width: 48,
-                height: 48,
-              }}
-            >
-              {React.createElement(
-                iconOptions.find(opt => opt.value === selectedIcon)?.icon || SchoolIcon,
-                { sx: { fontSize: 24, color: 'white' } }
-              )}
-            </Avatar>
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {title || 'Category Title'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Subject Category
-              </Typography>
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              🖼️ Icon URL/Resource
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+              <Box sx={{ minWidth: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {renderIconPreview(icon)}
+              </Box>
+              <TextField
+                fullWidth
+                size="small"
+                label="Icon URL or Resource Name"
+                value={icon}
+                onChange={e => setIcon(e.target.value)}
+                placeholder="Enter image URL (https://...) or resource name (ic_science)"
+                InputProps={{ style: { fontFamily: 'monospace' } }}
+                disabled={loading}
+              />
             </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              {icon && isValidUrl(icon) && (
+                <Chip label="✅ Valid URL" size="small" color="success" variant="outlined" />
+              )}
+              {icon && !isValidUrl(icon) && icon.startsWith('ic_') && (
+                <Chip label="📱 Resource Name" size="small" color="info" variant="outlined" />
+              )}
+              {icon && !isValidUrl(icon) && !icon.startsWith('ic_') && (
+                <Chip label="⚠️ Invalid format" size="small" color="warning" variant="outlined" />
+              )}
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ width: '100%', mb: 1 }}>
+                Common resource names:
+              </Typography>
+              {resourceSuggestions.map(resource => (
+                <Chip
+                  key={resource}
+                  label={resource}
+                  size="small"
+                  variant="outlined"
+                  clickable
+                  onClick={() => setIcon(resource)}
+                  sx={{ fontSize: '0.75rem' }}
+                />
+              ))}
+            </Box>
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+              🎨 Color
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+              <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: colorHex, border: '1px solid #e0e0e0' }} />
+              <TextField
+                size="small"
+                label="Hex Color"
+                value={colorHex}
+                onChange={e => setColorHex(e.target.value)}
+                InputProps={{ startAdornment: <InputAdornment position="start">🎨</InputAdornment> }}
+                sx={{ width: 140 }}
+                disabled={loading}
+              />
+            </Box>
+            <Slider
+              min={0}
+              max={359}
+              value={getHue(colorHex)}
+              onChange={handleColorSlider}
+              sx={{ maxWidth: 300 }}
+              disabled={loading}
+            />
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+              Preview
+            </Typography>
+            <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, borderRadius: 2, maxWidth: 350 }}>
+              <Avatar sx={{ bgcolor: colorHex, width: 48, height: 48, fontSize: 32 }}>
+                {renderIconPreview(icon)}
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {title || 'Category Title'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Subject Category
+                </Typography>
+              </Box>
+            </Card>
           </Box>
         </Box>
       </DialogContent>
-
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button
-          onClick={handleClose}
-          disabled={loading}
-          sx={{ borderRadius: 2 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading || !title.trim()}
-          startIcon={loading ? <CircularProgress size={20} /> : null}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-          }}
-        >
-          {loading ? 'Creating...' : 'Create Category'}
+      <DialogActions>
+        <Button onClick={handleClose} disabled={loading}>Cancel</Button>
+        <Button onClick={handleSubmit} variant="contained" disabled={loading || !title.trim()}>
+          {loading ? <CircularProgress size={20} /> : 'Create'}
         </Button>
       </DialogActions>
     </Dialog>
