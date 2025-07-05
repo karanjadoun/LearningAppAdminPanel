@@ -50,6 +50,9 @@ interface AppSettings {
   // Authentication Control
   authEnabled: boolean;
   
+  // Navigation Settings
+  categoriesEnabled: boolean;
+  
   // Authentication Screen Settings
   authScreenTitle: string;
   authScreenSubtitle: string;
@@ -125,6 +128,9 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   // Authentication Control
   authEnabled: false,
+  
+  // Navigation Settings
+  categoriesEnabled: true,
   
   // Authentication Screen Settings
   authScreenTitle: '',
@@ -229,6 +235,9 @@ const AppSettings: React.FC = () => {
   const [notificationPromptFrequency, setNotificationPromptFrequency] = useState('once');
   const [notificationPromptCustomInterval, setNotificationPromptCustomInterval] = useState(24);
   const [notificationIconUrlError, setNotificationIconUrlError] = useState('');
+  
+  // Navigation settings
+  const [categoriesEnabled, setCategoriesEnabled] = useState(true);
 
   const settingsRef = doc(db, 'app_settings', 'general');
 
@@ -294,6 +303,7 @@ const AppSettings: React.FC = () => {
         setNotificationPromptCancelText(data.notificationPromptCancelText || '');
         setNotificationPromptFrequency(data.notificationPromptFrequency || 'once');
         setNotificationPromptCustomInterval(data.notificationPromptCustomInterval || 24);
+        setCategoriesEnabled(data.categoriesEnabled !== false); // Default to true if not set
         showSnackbar('Settings loaded successfully!', 'success');
       } else {
         setSettings(defaultSettings);
@@ -312,6 +322,7 @@ const AppSettings: React.FC = () => {
         setNotificationPromptCancelText('');
         setNotificationPromptFrequency('once');
         setNotificationPromptCustomInterval(24);
+        setCategoriesEnabled(true);
         showSnackbar('No settings found. Using default values.', 'info');
       }
     } catch (error) {
@@ -367,6 +378,7 @@ const AppSettings: React.FC = () => {
         notificationPromptCancelText,
         notificationPromptFrequency,
         notificationPromptCustomInterval,
+        categoriesEnabled,
         lastUpdated: new Date().toISOString(),
       };
 
@@ -800,6 +812,81 @@ const AppSettings: React.FC = () => {
                   </Button>
                 </Grid>
               </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Navigation Settings */}
+        <Grid item xs={12}>
+          <Card sx={{ border: '2px solid', borderColor: categoriesEnabled ? 'success.main' : 'warning.main' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                <AppsIcon color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  Navigation Settings
+                </Typography>
+                {categoriesEnabled ? (
+                  <Box sx={{ color: 'success.main', fontSize: '1.2rem' }}>🧭</Box>
+                ) : (
+                  <Box sx={{ color: 'warning.main', fontSize: '1.2rem' }}>⚡</Box>
+                )}
+              </Box>
+              
+              <Alert 
+                severity={categoriesEnabled ? "info" : "warning"} 
+                sx={{ mb: 3 }}
+              >
+                <Typography variant="body2">
+                  <strong>
+                    {categoriesEnabled 
+                      ? "🧭 3-View Mode: Home → Categories → Topics → Content"
+                      : "⚡ 2-View Mode: Home → Topics → Content (Categories bypassed)"
+                    }
+                  </strong>
+                </Typography>
+              </Alert>
+
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={categoriesEnabled}
+                      onChange={(e) => setCategoriesEnabled(e.target.checked)}
+                      color={categoriesEnabled ? "success" : "warning"}
+                      size="medium"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body1" fontWeight={600}>
+                        Categories View Enabled
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        ({categoriesEnabled ? 'ON' : 'OFF'})
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </FormGroup>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                {categoriesEnabled 
+                  ? "🧭 When enabled, users navigate through: Home → Categories → Topics → Content. This provides better organization for apps with many categories."
+                  : "⚡ When disabled, users navigate directly: Home → Topics → Content. This creates a faster, more streamlined experience by bypassing the categories screen."
+                }
+              </Typography>
+              
+              <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Typography variant="subtitle2" fontWeight={600} mb={1}>
+                  Navigation Preview:
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {categoriesEnabled 
+                    ? "📱 Home Screen → 📂 Categories Screen → 📚 Topics Screen → 📄 Content"
+                    : "📱 Home Screen → 📚 Topics Screen → 📄 Content"
+                  }
+                </Typography>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
