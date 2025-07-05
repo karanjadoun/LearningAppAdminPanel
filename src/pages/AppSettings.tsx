@@ -64,6 +64,7 @@ interface AppSettings {
   promoCardBackgroundColor: string;
   promoCardTitleColor: string;
   promoCardSubtitleColor: string;
+  promoCardIconUrl: string;
   
   // Loading Animation Colors
   loadingAnimationColor: string;
@@ -122,6 +123,7 @@ const defaultSettings: AppSettings = {
   promoCardBackgroundColor: '#fe4a49',
   promoCardTitleColor: '#FFFFFF',
   promoCardSubtitleColor: '#FFFFFF',
+  promoCardIconUrl: '',
   
   // Loading Animation Colors
   loadingAnimationColor: '#FF156D',
@@ -211,6 +213,9 @@ const AppSettings: React.FC = () => {
       }
       if (!isValidUrl(settings.moreAppsUrl)) {
         throw new Error('More Apps URL is not valid');
+      }
+      if (settings.promoCardIconUrl && !isValidUrl(settings.promoCardIconUrl)) {
+        throw new Error('Promo Card Icon URL is not valid');
       }
 
       // Validate required fields
@@ -600,6 +605,24 @@ const AppSettings: React.FC = () => {
                     helperText="Subtitle text. Use \n for line breaks"
                   />
                 </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Promo Card Icon URL"
+                    value={settings.promoCardIconUrl}
+                    onChange={handleInputChange('promoCardIconUrl')}
+                    type="url"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LinkIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                    helperText="URL for the icon image to display on the promo card. The mobile app will use this URL to display the icon dynamically."
+                    error={Boolean(settings.promoCardIconUrl && !isValidUrl(settings.promoCardIconUrl))}
+                  />
+                </Grid>
               </Grid>
 
               {/* Promo Card Color Controls */}
@@ -758,6 +781,26 @@ const AppSettings: React.FC = () => {
                           minWidth: 280,
                           textAlign: 'center'
                         }}>
+                          {settings.promoCardIconUrl && (
+                            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'center' }}>
+                              <img 
+                                src={settings.promoCardIconUrl} 
+                                alt="Promo Card Icon"
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  objectFit: 'contain',
+                                  borderRadius: 8,
+                                  backgroundColor: 'rgba(255,255,255,0.1)',
+                                  padding: 4
+                                }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            </Box>
+                          )}
                           <Typography 
                             variant="h6" 
                             sx={{ 
@@ -1582,8 +1625,29 @@ const AppSettings: React.FC = () => {
                       color: 'white',
                       p: 2,
                       borderRadius: 2,
-                      mb: 3
+                      mb: 3,
+                      textAlign: 'center'
                     }}>
+                      {settings.promoCardIconUrl && (
+                        <Box sx={{ mb: 1, display: 'flex', justifyContent: 'center' }}>
+                          <img 
+                            src={settings.promoCardIconUrl} 
+                            alt="Promo Card Icon"
+                            style={{
+                              width: 32,
+                              height: 32,
+                              objectFit: 'contain',
+                              borderRadius: 4,
+                              backgroundColor: 'rgba(255,255,255,0.1)',
+                              padding: 2
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </Box>
+                      )}
                       <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
                         {settings.promoCardTitle}
                       </Typography>
