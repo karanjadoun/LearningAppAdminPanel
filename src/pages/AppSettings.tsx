@@ -50,6 +50,14 @@ interface AppSettings {
   // Authentication Control
   authEnabled: boolean;
   
+  // Authentication Screen Settings
+  authScreenTitle: string;
+  authScreenSubtitle: string;
+  authScreenIconUrl: string;
+  authScreenButtonText: string;
+  authScreenButtonColor: string;
+  authScreenButtonIconUrl: string;
+  
   // App Identity
   appName: string;
   
@@ -108,6 +116,14 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   // Authentication Control
   authEnabled: false,
+  
+  // Authentication Screen Settings
+  authScreenTitle: '',
+  authScreenSubtitle: '',
+  authScreenIconUrl: '',
+  authScreenButtonText: '',
+  authScreenButtonColor: '#4285F4',
+  authScreenButtonIconUrl: '',
   
   // App Identity
   appName: 'LearningApp',

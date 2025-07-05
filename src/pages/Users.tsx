@@ -222,16 +222,20 @@ const Users: React.FC = () => {
     saveAs(blob, `users_export_${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
-  const formatDate = (date: any) => {
+  const formatDate = (date: Date | string | number | null | undefined) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+    try {
+      return new Date(date).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   const getProviderIconAndLabel = (providerData: string[]) => {
@@ -579,11 +583,12 @@ const Users: React.FC = () => {
                         selectedUserIds.length > 0 &&
                         selectedUserIds.length === filteredUsers.length
                       }
-                      indeterminate={
-                        selectedUserIds.length > 0 &&
-                        selectedUserIds.length < filteredUsers.length
-                      }
                       onChange={(e) => handleSelectAll(e.target.checked)}
+                      ref={(input) => {
+                        if (input) {
+                          input.indeterminate = selectedUserIds.length > 0 && selectedUserIds.length < filteredUsers.length;
+                        }
+                      }}
                     />
                   </TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>User</TableCell>
@@ -635,7 +640,7 @@ const Users: React.FC = () => {
                         const { icon, label } = getProviderIconAndLabel(user.providerData);
                         return (
                           <Chip
-                            icon={icon}
+                            icon={icon || undefined}
                             label={label}
                             size="small"
                             color="primary"
@@ -754,12 +759,17 @@ const Users: React.FC = () => {
                   <Typography variant="subtitle2" color="text.secondary">
                     Sign-in Provider
                   </Typography>
-                  <Chip
-                    label={getProviderIconAndLabel(selectedUser.providerData).label}
-                    color="primary"
-                    variant="outlined"
-                    icon={getProviderIconAndLabel(selectedUser.providerData).icon}
-                  />
+                  {(() => {
+                    const { icon, label } = getProviderIconAndLabel(selectedUser.providerData);
+                    return (
+                      <Chip
+                        label={label}
+                        color="primary"
+                        variant="outlined"
+                        icon={icon || undefined}
+                      />
+                    );
+                  })()}
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2" color="text.secondary">
