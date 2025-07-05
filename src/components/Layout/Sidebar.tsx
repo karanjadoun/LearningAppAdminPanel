@@ -24,6 +24,8 @@ import {
   Campaign as AdsIcon,
   School as SchoolIcon,
   Logout as LogoutIcon,
+  People as PeopleIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppConfig } from '../../contexts/AppConfigContext';
@@ -55,6 +57,18 @@ const menuItems: MenuItem[] = [
     label: 'Content Management',
     icon: ContentIcon,
     path: '/content',
+  },
+  {
+    id: 'users',
+    label: 'Users',
+    icon: PeopleIcon,
+    path: '/users',
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: NotificationsIcon,
+    path: '/notifications',
   },
   {
     id: 'app-settings',

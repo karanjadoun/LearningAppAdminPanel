@@ -12,12 +12,14 @@ import AppBar from './components/Layout/AppBar';
 import Sidebar from './components/Layout/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 import ContentManagement from './pages/ContentManagement';
+import Users from './pages/Users';
 import Settings from './pages/Settings';
 import AdvancedSettings from './pages/AdvancedSettings';
 import AppSettings from './pages/AppSettings';
 import AdsSettings from './pages/AdsSettings';
 import LoginPage from './components/Auth/LoginPage';
 import SetupWizard from './components/Setup/SetupWizard';
+import Notifications from './pages/Notifications';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -408,10 +410,12 @@ const AppContent: React.FC = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/content" element={<ContentManagement />} />
+            <Route path="/users" element={<Users />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/advanced-settings" element={<AdvancedSettings />} />
             <Route path="/app-settings" element={<AppSettings />} />
             <Route path="/ads-settings" element={<AdsSettings />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Routes>
         </Box>
       </Box>

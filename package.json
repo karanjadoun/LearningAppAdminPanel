@@ -15,14 +15,18 @@
     "@mui/icons-material": "^5.14.19",
     "@mui/material": "^5.14.20",
     "@mui/x-data-grid": "^6.18.1",
+    "@mui/x-date-pickers": "^8.7.0",
     "@mui/x-tree-view": "^6.17.0",
     "@tanstack/react-query": "^5.8.4",
+    "date-fns": "^4.1.0",
+    "file-saver": "^2.0.5",
     "firebase": "^10.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-quill": "^2.0.0",
     "react-router-dom": "^6.20.1",
+    "recharts": "^3.0.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

@@ -162,6 +162,9 @@ const defaultSettings: AppSettings = {
   nodeCardLayout: 'list',
 };
 
+const imageUrlRegex = /\.(png|jpg|jpeg|svg|webp)$/i;
+const colorRegex = /^#([0-9A-F]{3}){1,2}$/i;
+
 const AppSettings: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [loading, setLoading] = useState(false);
@@ -172,12 +175,44 @@ const AppSettings: React.FC = () => {
     message: string;
     severity: 'success' | 'error' | 'info';
   }>({ open: false, message: '', severity: 'success' });
+  // Auth screen fields
+  const [authScreenTitle, setAuthScreenTitle] = useState('');
+  const [authScreenSubtitle, setAuthScreenSubtitle] = useState('');
+  const [authScreenIconUrl, setAuthScreenIconUrl] = useState('');
+  const [authScreenButtonText, setAuthScreenButtonText] = useState('');
+  const [authScreenButtonColor, setAuthScreenButtonColor] = useState('#4285F4');
+  const [authScreenButtonIconUrl, setAuthScreenButtonIconUrl] = useState('');
+  const [iconUrlError, setIconUrlError] = useState('');
+  const [buttonColorError, setButtonColorError] = useState('');
+  const [buttonIconUrlError, setButtonIconUrlError] = useState('');
 
   const settingsRef = doc(db, 'app_settings', 'general');
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    if (authScreenIconUrl && !imageUrlRegex.test(authScreenIconUrl)) {
+      setIconUrlError('Must be a valid image URL (.png, .jpg, .svg, .webp)');
+    } else {
+      setIconUrlError('');
+    }
+  }, [authScreenIconUrl]);
+  useEffect(() => {
+    if (authScreenButtonColor && !colorRegex.test(authScreenButtonColor)) {
+      setButtonColorError('Must be a valid hex color (e.g. #FFD700)');
+    } else {
+      setButtonColorError('');
+    }
+  }, [authScreenButtonColor]);
+  useEffect(() => {
+    if (authScreenButtonIconUrl && !(imageUrlRegex.test(authScreenButtonIconUrl) || /^ic_\w+$/i.test(authScreenButtonIconUrl))) {
+      setButtonIconUrlError('Must be a valid image URL (.png, .jpg, .svg, .webp) or a drawable resource name (e.g. ic_google)');
+    } else {
+      setButtonIconUrlError('');
+    }
+  }, [authScreenButtonIconUrl]);
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -191,9 +226,22 @@ const AppSettings: React.FC = () => {
       if (docSnap.exists()) {
         const data = docSnap.data() as AppSettings;
         setSettings(data);
+        // Set authentication screen fields from Firestore
+        setAuthScreenTitle(data.authScreenTitle || '');
+        setAuthScreenSubtitle(data.authScreenSubtitle || '');
+        setAuthScreenIconUrl(data.authScreenIconUrl || '');
+        setAuthScreenButtonText(data.authScreenButtonText || '');
+        setAuthScreenButtonColor(data.authScreenButtonColor || '#4285F4');
+        setAuthScreenButtonIconUrl(data.authScreenButtonIconUrl || '');
         showSnackbar('Settings loaded successfully!', 'success');
       } else {
         setSettings(defaultSettings);
+        setAuthScreenTitle('');
+        setAuthScreenSubtitle('');
+        setAuthScreenIconUrl('');
+        setAuthScreenButtonText('');
+        setAuthScreenButtonColor('#4285F4');
+        setAuthScreenButtonIconUrl('');
         showSnackbar('No settings found. Using default values.', 'info');
       }
     } catch (error) {
@@ -358,6 +406,153 @@ const AppSettings: React.FC = () => {
       </Alert>
 
       <Grid container spacing={3}>
+        {/* Authentication Screen Settings */}
+        <Grid item xs={12}>
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} mb={2}>Authentication Screen Settings</Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Authentication Screen Title"
+                    value={authScreenTitle}
+                    onChange={e => setAuthScreenTitle(e.target.value)}
+                    fullWidth
+                    placeholder="Welcome to Study App"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Authentication Screen Subtitle"
+                    value={authScreenSubtitle}
+                    onChange={e => setAuthScreenSubtitle(e.target.value)}
+                    fullWidth
+                    placeholder="Sign in to continue"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Authentication Screen Icon URL"
+                    value={authScreenIconUrl}
+                    onChange={e => setAuthScreenIconUrl(e.target.value)}
+                    fullWidth
+                    placeholder="https://example.com/icon.png"
+                    error={!!iconUrlError}
+                    helperText={iconUrlError || ' '}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Authentication Button Icon URL"
+                    value={authScreenButtonIconUrl}
+                    onChange={e => setAuthScreenButtonIconUrl(e.target.value)}
+                    fullWidth
+                    placeholder="https://example.com/google-icon.png or ic_google"
+                    error={!!buttonIconUrlError}
+                    helperText={buttonIconUrlError || ' '}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    label="Authentication Button Text"
+                    value={authScreenButtonText}
+                    onChange={e => setAuthScreenButtonText(e.target.value)}
+                    fullWidth
+                    placeholder="Sign in with Google"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    label="Authentication Button Color"
+                    value={authScreenButtonColor}
+                    onChange={e => setAuthScreenButtonColor(e.target.value)}
+                    fullWidth
+                    placeholder="#FFD700"
+                    error={!!buttonColorError}
+                    helperText={buttonColorError || ' '}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Box sx={{ width: 24, height: 24, bgcolor: authScreenButtonColor, border: '1px solid #ccc', borderRadius: '4px' }} />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+                    {authScreenIconUrl && !iconUrlError && (
+                      <Box mb={2}>
+                        <img src={authScreenIconUrl} alt="Auth Icon" style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 16, boxShadow: '0 2px 8px #0001' }} />
+                      </Box>
+                    )}
+                    <Typography variant="h5" fontWeight={700} mb={1}>{authScreenTitle || 'Welcome to Study App'}</Typography>
+                    <Typography variant="body1" color="text.secondary" mb={3}>{authScreenSubtitle || 'Sign in to continue'}</Typography>
+                    {authScreenButtonText && !buttonColorError && (
+                      <Button
+                        variant="contained"
+                        sx={{
+                          bgcolor: authScreenButtonColor,
+                          color: '#fff',
+                          fontWeight: 700,
+                          px: 4,
+                          py: 1.5,
+                          fontSize: 18,
+                          boxShadow: '0 2px 8px #0002',
+                          '&:hover': { bgcolor: authScreenButtonColor },
+                        }}
+                        disabled
+                        startIcon={
+                          authScreenButtonIconUrl && !buttonIconUrlError ? (
+                            imageUrlRegex.test(authScreenButtonIconUrl) ? (
+                              <img src={authScreenButtonIconUrl} alt="btn icon" style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                            ) : (
+                              <Box sx={{ width: 24, height: 24, bgcolor: '#eee', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                                {authScreenButtonIconUrl}
+                              </Box>
+                            )
+                          ) : null
+                        }
+                      >
+                        {authScreenButtonText}
+                      </Button>
+                    )}
+                  </Box>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={async () => {
+                      if (iconUrlError || buttonColorError || buttonIconUrlError) return;
+                      setSaving(true);
+                      try {
+                        await setDoc(settingsRef, {
+                          authScreenTitle,
+                          authScreenSubtitle,
+                          authScreenIconUrl,
+                          authScreenButtonText,
+                          authScreenButtonColor,
+                          authScreenButtonIconUrl,
+                        }, { merge: true });
+                        setSnackbar({ open: true, message: 'Authentication screen settings saved!', severity: 'success' });
+                      } catch (err) {
+                        setSnackbar({ open: true, message: 'Failed to save authentication screen settings.', severity: 'error' });
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    disabled={saving || !!iconUrlError || !!buttonColorError || !!buttonIconUrlError}
+                    sx={{ mt: 2 }}
+                  >
+                    {saving ? 'Saving...' : 'Save Authentication Settings'}
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* Authentication Control */}
         <Grid item xs={12}>
           <Card sx={{ border: '2px solid', borderColor: settings.authEnabled ? 'error.main' : 'success.main' }}>
