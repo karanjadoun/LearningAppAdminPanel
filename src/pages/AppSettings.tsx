@@ -58,6 +58,15 @@ interface AppSettings {
   authScreenButtonColor: string;
   authScreenButtonIconUrl: string;
   
+  // Notification Permission Prompt Settings
+  notificationPromptTitle: string;
+  notificationPromptMessage: string;
+  notificationPromptIconUrl: string;
+  notificationPromptAllowText: string;
+  notificationPromptCancelText: string;
+  notificationPromptFrequency: string;
+  notificationPromptCustomInterval: number;
+  
   // App Identity
   appName: string;
   
@@ -124,6 +133,15 @@ const defaultSettings: AppSettings = {
   authScreenButtonText: '',
   authScreenButtonColor: '#4285F4',
   authScreenButtonIconUrl: '',
+  
+  // Notification Permission Prompt Settings
+  notificationPromptTitle: '',
+  notificationPromptMessage: '',
+  notificationPromptIconUrl: '',
+  notificationPromptAllowText: '',
+  notificationPromptCancelText: '',
+  notificationPromptFrequency: 'once',
+  notificationPromptCustomInterval: 24,
   
   // App Identity
   appName: 'LearningApp',
@@ -201,6 +219,16 @@ const AppSettings: React.FC = () => {
   const [iconUrlError, setIconUrlError] = useState('');
   const [buttonColorError, setButtonColorError] = useState('');
   const [buttonIconUrlError, setButtonIconUrlError] = useState('');
+  
+  // Notification prompt fields
+  const [notificationPromptTitle, setNotificationPromptTitle] = useState('');
+  const [notificationPromptMessage, setNotificationPromptMessage] = useState('');
+  const [notificationPromptIconUrl, setNotificationPromptIconUrl] = useState('');
+  const [notificationPromptAllowText, setNotificationPromptAllowText] = useState('');
+  const [notificationPromptCancelText, setNotificationPromptCancelText] = useState('');
+  const [notificationPromptFrequency, setNotificationPromptFrequency] = useState('once');
+  const [notificationPromptCustomInterval, setNotificationPromptCustomInterval] = useState(24);
+  const [notificationIconUrlError, setNotificationIconUrlError] = useState('');
 
   const settingsRef = doc(db, 'app_settings', 'general');
 
@@ -229,6 +257,14 @@ const AppSettings: React.FC = () => {
       setButtonIconUrlError('');
     }
   }, [authScreenButtonIconUrl]);
+  
+  useEffect(() => {
+    if (notificationPromptIconUrl && !(imageUrlRegex.test(notificationPromptIconUrl) || /^ic_\w+$/i.test(notificationPromptIconUrl))) {
+      setNotificationIconUrlError('Must be a valid image URL (.png, .jpg, .svg, .webp) or a drawable resource name (e.g. ic_notification)');
+    } else {
+      setNotificationIconUrlError('');
+    }
+  }, [notificationPromptIconUrl]);
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'info') => {
     setSnackbar({ open: true, message, severity });
@@ -249,6 +285,15 @@ const AppSettings: React.FC = () => {
         setAuthScreenButtonText(data.authScreenButtonText || '');
         setAuthScreenButtonColor(data.authScreenButtonColor || '#4285F4');
         setAuthScreenButtonIconUrl(data.authScreenButtonIconUrl || '');
+        
+        // Set notification prompt fields from Firestore
+        setNotificationPromptTitle(data.notificationPromptTitle || '');
+        setNotificationPromptMessage(data.notificationPromptMessage || '');
+        setNotificationPromptIconUrl(data.notificationPromptIconUrl || '');
+        setNotificationPromptAllowText(data.notificationPromptAllowText || '');
+        setNotificationPromptCancelText(data.notificationPromptCancelText || '');
+        setNotificationPromptFrequency(data.notificationPromptFrequency || 'once');
+        setNotificationPromptCustomInterval(data.notificationPromptCustomInterval || 24);
         showSnackbar('Settings loaded successfully!', 'success');
       } else {
         setSettings(defaultSettings);
@@ -258,6 +303,15 @@ const AppSettings: React.FC = () => {
         setAuthScreenButtonText('');
         setAuthScreenButtonColor('#4285F4');
         setAuthScreenButtonIconUrl('');
+        
+        // Reset notification prompt fields
+        setNotificationPromptTitle('');
+        setNotificationPromptMessage('');
+        setNotificationPromptIconUrl('');
+        setNotificationPromptAllowText('');
+        setNotificationPromptCancelText('');
+        setNotificationPromptFrequency('once');
+        setNotificationPromptCustomInterval(24);
         showSnackbar('No settings found. Using default values.', 'info');
       }
     } catch (error) {
@@ -298,6 +352,21 @@ const AppSettings: React.FC = () => {
 
       const updatedSettings = {
         ...settings,
+        // Authentication screen settings
+        authScreenTitle,
+        authScreenSubtitle,
+        authScreenIconUrl,
+        authScreenButtonText,
+        authScreenButtonColor,
+        authScreenButtonIconUrl,
+        // Notification prompt settings
+        notificationPromptTitle,
+        notificationPromptMessage,
+        notificationPromptIconUrl,
+        notificationPromptAllowText,
+        notificationPromptCancelText,
+        notificationPromptFrequency,
+        notificationPromptCustomInterval,
         lastUpdated: new Date().toISOString(),
       };
 
@@ -562,6 +631,172 @@ const AppSettings: React.FC = () => {
                     sx={{ mt: 2 }}
                   >
                     {saving ? 'Saving...' : 'Save Authentication Settings'}
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Notification Permission Prompt Settings */}
+        <Grid item xs={12}>
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight={700} mb={2}>Notification Permission Prompt Settings</Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Notification Prompt Title"
+                    value={notificationPromptTitle}
+                    onChange={e => setNotificationPromptTitle(e.target.value)}
+                    fullWidth
+                    placeholder="Don't miss out on Important Notifications!"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Notification Prompt Message"
+                    value={notificationPromptMessage}
+                    onChange={e => setNotificationPromptMessage(e.target.value)}
+                    fullWidth
+                    placeholder="Enable notifications to get reminders, offers, and important updates."
+                    multiline
+                    rows={2}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Notification Prompt Icon URL"
+                    value={notificationPromptIconUrl}
+                    onChange={e => setNotificationPromptIconUrl(e.target.value)}
+                    fullWidth
+                    placeholder="https://example.com/notification-icon.png or ic_notification"
+                    error={!!notificationIconUrlError}
+                    helperText={notificationIconUrlError || ' '}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    label="Allow Button Text"
+                    value={notificationPromptAllowText}
+                    onChange={e => setNotificationPromptAllowText(e.target.value)}
+                    fullWidth
+                    placeholder="Allow"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    label="Cancel Button Text"
+                    value={notificationPromptCancelText}
+                    onChange={e => setNotificationPromptCancelText(e.target.value)}
+                    fullWidth
+                    placeholder="Cancel"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Notification Prompt Frequency</InputLabel>
+                    <Select
+                      value={notificationPromptFrequency}
+                      onChange={(e) => setNotificationPromptFrequency(e.target.value)}
+                      label="Notification Prompt Frequency"
+                    >
+                      <MenuItem value="always">Always show prompt</MenuItem>
+                      <MenuItem value="once">Show once only</MenuItem>
+                      <MenuItem value="daily">Show daily</MenuItem>
+                      <MenuItem value="custom">Custom interval</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Custom Interval (hours)"
+                    type="number"
+                    value={notificationPromptCustomInterval}
+                    onChange={(e) => setNotificationPromptCustomInterval(Number(e.target.value))}
+                    fullWidth
+                    placeholder="24"
+                    disabled={notificationPromptFrequency !== 'custom'}
+                    helperText={notificationPromptFrequency === 'custom' ? 'Enter hours between prompts (e.g., 48 for every 2 days)' : 'Only used when frequency is set to "custom"'}
+                    InputProps={{
+                      inputProps: { min: 1, max: 8760 } // 1 hour to 1 year
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Frequency Options:</strong>
+                      <br />• <strong>Always:</strong> Show prompt every time the app opens
+                      <br />• <strong>Once:</strong> Show prompt only once, never again
+                      <br />• <strong>Daily:</strong> Show prompt once per day
+                      <br />• <strong>Custom:</strong> Show prompt based on custom interval (in hours)
+                    </Typography>
+                  </Alert>
+                  <Box display="flex" flexDirection="column" alignItems="center" py={2}>
+                    {notificationPromptIconUrl && !notificationIconUrlError && (
+                      <Box mb={2}>
+                        <img src={notificationPromptIconUrl} alt="Notification Icon" style={{ width: 72, height: 72, objectFit: 'contain', borderRadius: 16, boxShadow: '0 2px 8px #0001' }} />
+                      </Box>
+                    )}
+                    <Typography variant="h5" fontWeight={700} mb={1}>{notificationPromptTitle || 'Don\'t miss out on Important Notifications!'}</Typography>
+                    <Typography variant="body1" color="text.secondary" mb={3}>{notificationPromptMessage || 'Enable notifications to get reminders, offers, and important updates.'}</Typography>
+                    <Box display="flex" gap={2}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        disabled
+                        startIcon={
+                          notificationPromptIconUrl && !notificationIconUrlError ? (
+                            imageUrlRegex.test(notificationPromptIconUrl) ? (
+                              <img src={notificationPromptIconUrl} alt="notification icon" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+                            ) : (
+                              <Box sx={{ width: 20, height: 20, bgcolor: '#eee', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
+                                {notificationPromptIconUrl}
+                              </Box>
+                            )
+                          ) : null
+                        }
+                      >
+                        {notificationPromptAllowText || 'Allow'}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        disabled
+                      >
+                        {notificationPromptCancelText || 'Cancel'}
+                      </Button>
+                    </Box>
+                  </Box>
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={async () => {
+                      if (notificationIconUrlError) return;
+                      setSaving(true);
+                      try {
+                        await setDoc(settingsRef, {
+                          notificationPromptTitle,
+                          notificationPromptMessage,
+                          notificationPromptIconUrl,
+                          notificationPromptAllowText,
+                          notificationPromptCancelText,
+                          notificationPromptFrequency,
+                          notificationPromptCustomInterval,
+                        }, { merge: true });
+                        setSnackbar({ open: true, message: 'Notification prompt settings saved!', severity: 'success' });
+                      } catch (err) {
+                        setSnackbar({ open: true, message: 'Failed to save notification prompt settings.', severity: 'error' });
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    disabled={saving || !!notificationIconUrlError}
+                    sx={{ mt: 2 }}
+                  >
+                    {saving ? 'Saving...' : 'Save Notification Prompt Settings'}
                   </Button>
                 </Grid>
               </Grid>
