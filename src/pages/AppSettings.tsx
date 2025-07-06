@@ -90,6 +90,9 @@ interface AppSettings {
   loadingAnimationColor: string;
   loadingTextColor: string;
   
+  // Content Progress Bar Color
+  contentProgressBarColor: string;
+  
   // Bottom Navigation Colors
   bottomNavHomeColor: string;
   bottomNavHeartColor: string;
@@ -168,6 +171,9 @@ const defaultSettings: AppSettings = {
   // Loading Animation Colors
   loadingAnimationColor: '#FF156D',
   loadingTextColor: '#666666',
+  
+  // Content Progress Bar Color
+  contentProgressBarColor: '#6bd600',
   
   // Bottom Navigation Colors
   bottomNavHomeColor: '#3B82F6',     // Modern Blue
@@ -1393,7 +1399,7 @@ const AppSettings: React.FC = () => {
               
               <Alert severity="info" sx={{ mb: 3 }}>
                 <Typography variant="body2">
-                  <strong>🔄 Loading Colors:</strong> These colors control the loading animations (bouncing squares and text) that appear when content is loading throughout the app. Changes will appear instantly.
+                  <strong>🔄 Loading Colors:</strong> These colors control the loading animations (bouncing squares and text) that appear when content is loading throughout the app. <strong>📊 Progress Bar Color:</strong> Controls the color of the reading progress bar on content detail screens. Changes will appear instantly.
                 </Typography>
               </Alert>
               
@@ -1478,6 +1484,49 @@ const AppSettings: React.FC = () => {
                   </Box>
                 </Grid>
 
+                {/* Content Progress Bar Color */}
+                <Grid item xs={12} md={6} lg={4}>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      📊 Content Progress Bar Color
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                      <input
+                        type="color"
+                        value={settings.contentProgressBarColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, contentProgressBarColor: e.target.value }))}
+                        style={{ 
+                          width: 50, 
+                          height: 40, 
+                          border: 'none', 
+                          borderRadius: 8, 
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={settings.contentProgressBarColor}
+                        onChange={(e) => setSettings(prev => ({ ...prev, contentProgressBarColor: e.target.value }))}
+                        sx={{ flexGrow: 1 }}
+                        InputProps={{
+                          style: { fontFamily: 'monospace' }
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ 
+                      width: '100%', 
+                      height: 20, 
+                      backgroundColor: settings.contentProgressBarColor,
+                      borderRadius: 1,
+                      border: '1px solid #E5E7EB'
+                    }} />
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                      Color for the reading progress bar on content detail screens
+                    </Typography>
+                  </Box>
+                </Grid>
+
                 {/* Loading Animation Preview */}
                 <Grid item xs={12}>
                   <Box sx={{ mt: 3 }}>
@@ -1534,9 +1583,34 @@ const AppSettings: React.FC = () => {
                       >
                         Loading content...
                       </Typography>
+                      
+                      {/* Progress Bar Preview */}
+                      <Box sx={{ width: '100%', mt: 2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                          Progress Bar Preview:
+                        </Typography>
+                        <Box sx={{ 
+                          width: '100%', 
+                          height: 8, 
+                          backgroundColor: '#E5E7EB',
+                          borderRadius: 4,
+                          overflow: 'hidden'
+                        }}>
+                          <Box sx={{ 
+                            width: '65%', 
+                            height: '100%', 
+                            backgroundColor: settings.contentProgressBarColor,
+                            borderRadius: 4,
+                            transition: 'width 0.3s ease'
+                          }} />
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                          65% complete
+                        </Typography>
+                      </Box>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-                      Preview shows the loading animation with your selected colors as it appears in the mobile app.
+                      Preview shows the loading animation and progress bar with your selected colors as they appear in the mobile app.
                     </Typography>
                   </Box>
                 </Grid>
